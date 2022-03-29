@@ -1,0 +1,138 @@
+---
+title: "Updated tree"
+author: "K. J. McKenzie"
+date: "28/02/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Install packages
+
+```{r}
+library(tidyr)
+library(ggtree)
+library(ape)
+library(phytools)
+library(treeio)
+library(tidytree)
+library(ggimage)
+library(writexl)
+library(readxl)
+library(harrietr)
+library(tidyverse)
+library(RColorBrewer)
+```
+
+Read in tree file and geographic data
+```{r}
+tree <- read.iqtree("C:/Users/kelse/Documents/Tree Data/IQTree/genomicfna_concatenated.aln.treefile")
+tree
+
+temp <- read_xlsx("C:/Users/kelse/Documents/Masters R/Updated Geographic locations metadata.xlsx")
+#Only keep related columns
+temp <- subset(temp, select = c(Complete_genome_name, Broad_Temp))
+temp$Complete_genome_name <- paste0(temp$Complete_genome_name, "_genomic")
+```
+
+Make a basic circular tree
+```{r}
+ggtree(tree, layout = "circular")
+
+ggtree(tree, layout = 'circular', branch.length = 'none') +geom_tiplab(size=2)
+
+ggtree(tree, layout = 'circular', branch.length = 'none') + geom_nodelab(aes(label=node))
+
+x <- as_tibble(tree)
+as.phylo(x)
+
+tip_name_cleaning <- x[c("label")]
+write_xlsx(tip_name_cleaning, "tips.xlsx")
+tips <- read_xlsx("tips.xlsx")
+
+tips <- subset(tips, select = -c(label))
+
+x$unique.id <- rownames(x)
+
+x$correction <- NA
+x$correction[c(1,17:23, 27:35, 39, 66:68, 71:75, 77, 80:81, 85:86, 130, 136, 140:141, 149, 150)] <- "Unknown"
+x$correction[c(127)] <- "Undefined"
+x$correction[c(139)] <- "Cloacimonadota"
+x$correction[is.na(x$correction)] <- "Correct"
+
+tri <- left_join(temp, x, by = c("Complete_genome_name" = "label"))
+tri <- tri[c(1,2,8,9)]
+
+q <- ggtree(tree, layout = 'circular', branch.length = 'none') +geom_nodelab(aes(label=node))
+q <- q %<+% x + geom_tiplab(aes(label=unique.id), size = 3)
+q
+q + geom_highlight(node = 150, fill="tomato2")
+
+ggtree(tree, layout = 'circular', branch.length = 'none') + geom_cladelab(node = 166, label="Fimbriimonadia") +
+  geom_cladelab(node = 251, label='HRBIN16') +
+  geom_cladelab(node = 257, label='Chthonomonadetes') +
+  geom_cladelab(node = 283, label='Armatimonadota') +
+  geom_cladelab(node = 292, label='UBA5829') +
+  geom_cladelab(node = 138, label='DTGP01') +
+  geom_cladelab(node = 302, label='HRBW17') +
+  geom_cladelab(node = 306, label='Abditibacteria') +
+  geom_cladelab(node = 307, label='UBA5377') +
+  geom_cladelab(node = 150, label='UBA5377')+
+  geom_cladelab(node = 151, label='UBA5377')
+
+farbe <- data.frame(node=c(166,251,257,283,292,138,302,306,307,150, 151), Class=c("Fimbriimonadia", "HRBIN16", "Chthonomonadetes", "Armatimonadota", "UBA5829", "DTGP01", "HRBW17", "Abditibacteria", "UBA5377", "UBA5377", "UBA5377"))
+
+prettycolour <- ggtree(tree, layout = 'circular') + geom_hilight(data = farbe, aes(node=node, fill=Class), alpha=.5) + geom_treescale() + scale_fill_brewer(palette = "Set1")
+prettycolour %<+% temp + geom_tippoint(pch=16, aes(col=Broad_Temp), size = 2) + scale_color_manual(values = c("springgreen4", "black", "blue3", "orangered4"))
+
+shapes <- c(12, 17, 11, 3)
+
+finaltree <- prettycolour%<+% tri + geom_tippoint(aes(col=Broad_Temp, shape=correction), size = 2) + scale_color_manual(values = c("springgreen4", "black", "blue3", "orangered4")) + labs(shape="GTDB determination") + scale_shape_manual(values = shapes)
+ggsave("GTDBcorrect.png", width = 20, height = 15, units = "cm")
+```
+Alright, lets try and just put on the bootstraps over 75, and not on the tips.
+```{r}
+y <- x
+y <- y[-c(1:157),]
+y$label <- as.numeric(as.character(y$label))
+y <- subset(y, label>74)
+
+fiddling <- ggtree(tree, layout = 'circular', branch.length = 'none') + geom_hilight(data = farbe, aes(node=node, fill=Class), alpha=.2) + geom_treescale() + scale_fill_brewer(palette = "Set1")
+fiddling %<+% y + geom_nodelab(aes(shape=label))
+
+
+
+plee <- read.newick("C:/Users/kelse/Documents/Tree Data/IQTree/genomicfna_concatenated.aln.treefile")
+
+ggtree(tree, layout = 'circular', branch.length = 'none')+
+  geom_nodelab(
+          mapping = aes(
+              x = branch,
+              label = label,
+              subset = !is.na(as.numeric(label)) & as.numeric(label) > 75
+          ),
+          size = 4,
+          color = "black",
+          nudge_y = 0.6
+      )
+
+
+
+node_support <- get_node_support(tree)
+booted <- ggtree(tree, layout = 'circular') + geom_point(data = node_support %>% dplyr::filter(`SH-aLRT` >= 100), aes(x = x, y = y), colour = 'red', size = 2) +geom_point(data = node_support %>% dplyr::filter(`SH-aLRT` <= 99 & `SH-aLRT` >=90), aes(x = x, y = y), colour = 'blue', size = 2) +geom_point(data = node_support %>% dplyr::filter(`SH-aLRT` <= 89 & `SH-aLRT` >=75), aes(x = x, y = y), colour = 'green', size = 2) 
+
+```
+
+```{r}
+finaltree
+ggsave("finaltree.png", width = 18, height = 15, units = "cm")
+booted %<+% x + geom_tiplab(aes(label=unique.id), size = 3)
+ggsave("bootstraptree.png", width = 15, height = 15, units = "cm")
+
+tipgen <- x[c(4,7)]
+tipgen <- tipgen[c(1:156),]
+write_xlsx(tipgen, "tips_genomes.xlsx")
+```
+

@@ -1,0 +1,1944 @@
+---
+title: "coRdon"
+author: "K. J. McKenzie"
+date: "06/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Goal of this R markdown:
+- Codon usage bias
+- Environmental subsetting
+
+I am wanting to look into codon usage bias in my Armatimonadetes bacteria. I am going to primarily use the coRdon package for this. I am wanting to look at which codons are more heavily used in the genomes, and maybe even supplement this with an alanysis into tRNA numbers in genomes and whether this correlates with the codon information incovered with this analysis. 
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(writexl)
+library(rstatix)
+library(BiocManager)
+library(coRdon)
+library(data.table)
+library(janitor)
+library(ggpubr)
+library(RColorBrewer)
+```
+
+Setwd
+```{r}
+setwd("C:/Users/kelse/Documents/Masters R/coRdon")
+```
+
+Have a look at output of T49
+```{r}
+T49 <- readSet(file ="GCA_000427095.1_T49_genomic.fna.fna")
+T49 <- codonTable(T49)
+
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+#So i have a massive df with all the genes and the count of aa. I want to collapse this down so that in future when i rerun with all of my genomes, each row will be aa of one genome
+
+final <- mapply(sum, cc)
+final <- as.data.frame(final)
+
+colnames(final) <- "GCA_000427095.1_T49"
+#This output is quite nice... now what I want to do is I want to read in all of the file, make the individual codonTable and codonCount, and then add to one big df
+```
+
+
+```{r}
+T49 <- readSet(file = "GCA_000724625.1_ASM72462v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+#So i have a massive df with all the genes and the count of aa. I want to collapse this down so that in future when i rerun with all of my genomes, each row will be aa of one genome
+
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+
+colnames(ee) <- "GCA_000724625.1_ASM72462v1"
+
+final <- cbind(final, ee)
+```
+The rest
+```{r}
+T49 <- readSet(file = "GCA_001457855.1_WRG1.2_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_001457855.1_WRG1.2"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_001457975.1_P488_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_001457975.1_P488"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_001458035.1_TKA4.10_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_001458035.1_TKA4.10"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_001536225.1_JGI_assembly_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_001536225.1_JGI_assembly"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_001536245.1_IMG-taxon_2616645014_annotated_assembly_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_001536245.1_IMG-taxon_2616645014_annotated_assembly"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_001536265.1_IMG-taxon_2616645015_annotated_assembly_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_001536265.1_IMG-taxon_2616645015_annotated_assembly"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_001898035.1_ASM189803v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_001898035.1_ASM189803v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002162095.1_ASM216209v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002162095.1_ASM216209v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002254585.1_ASM225458v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002254585.1_ASM225458v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002780095.1_ASM278009v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002780095.1_ASM278009v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_003574315.1_ASM357431v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_003574315.1_ASM357431v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_003577165.1_ASM357716v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_003577165.1_ASM357716v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_003577425.1_ASM357742v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_003577425.1_ASM357742v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_003695875.1_ASM369587v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_003695875.1_ASM369587v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_008363305.1_ASM836330v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_008363305.1_ASM836330v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_008363365.1_ASM836336v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_008363365.1_ASM836336v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_009992855.1_ASM999285v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_009992855.1_ASM999285v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011047775.1_ASM1104777v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011047775.1_ASM1104777v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011048065.1_ASM1104806v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011048065.1_ASM1104806v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011048335.1_ASM1104833v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011048335.1_ASM1104833v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011051345.1_ASM1105134v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011051345.1_ASM1105134v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011053695.1_ASM1105369v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011053695.1_ASM1105369v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011053835.1_ASM1105383v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011053835.1_ASM1105383v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011053875.1_ASM1105387v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011053875.1_ASM1105387v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011054145.1_ASM1105414v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011054145.1_ASM1105414v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011055025.1_ASM1105502v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011055025.1_ASM1105502v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011055095.1_ASM1105509v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011055095.1_ASM1105509v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011056065.1_ASM1105606v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011056065.1_ASM1105606v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011056105.1_ASM1105610v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011056105.1_ASM1105610v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011057005.1_ASM1105700v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011057005.1_ASM1105700v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011057205.1_ASM1105720v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011057205.1_ASM1105720v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011329005.1_ASM1132900v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011329005.1_ASM1132900v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011333675.1_ASM1133367v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011333675.1_ASM1133367v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011333895.1_ASM1133389v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011333895.1_ASM1133389v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011335125.1_ASM1133512v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011335125.1_ASM1133512v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011359015.1_ASM1135901v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011359015.1_ASM1135901v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011370285.1_ASM1137028v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011370285.1_ASM1137028v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011371645.1_ASM1137164v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011371645.1_ASM1137164v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_011389205.1_ASM1138920v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_011389205.1_ASM1138920v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_012517255.1_ASM1251725v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_012517255.1_ASM1251725v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_012522555.1_ASM1252255v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_012522555.1_ASM1252255v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_012522575.1_ASM1252257v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_012522575.1_ASM1252257v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_013112795.1_ASM1311279v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_013112795.1_ASM1311279v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_013178155.1_ASM1317815v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_013178155.1_ASM1317815v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_013203665.1_ASM1320366v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_013203665.1_ASM1320366v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_013314755.1_ASM1331475v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_013314755.1_ASM1331475v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_013314775.1_ASM1331477v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_013314775.1_ASM1331477v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_013359125.1_ASM1335912v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_013359125.1_ASM1335912v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_013359165.1_ASM1335916v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_013359165.1_ASM1335916v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_013360745.1_ASM1336074v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_013360745.1_ASM1336074v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_014202505.1_ASM1420250v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_014202505.1_ASM1420250v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_014338115.1_ASM1433811v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_014338115.1_ASM1433811v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_014380815.1_ASM1438081v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_014380815.1_ASM1438081v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_015709495.1_ASM1570949v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_015709495.1_ASM1570949v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_016125185.1_ASM1612518v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_016125185.1_ASM1612518v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_016183865.1_ASM1618386v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_016183865.1_ASM1618386v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_016223145.1_ASM1622314v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_016223145.1_ASM1622314v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_016235455.1_ASM1623545v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_016235455.1_ASM1623545v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_016743695.1_ASM1674369v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_016743695.1_ASM1674369v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_016788115.1_ASM1678811v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_016788115.1_ASM1678811v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_016788425.1_ASM1678842v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_016788425.1_ASM1678842v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_016788585.1_ASM1678858v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_016788585.1_ASM1678858v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_016789105.1_ASM1678910v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_016789105.1_ASM1678910v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_016869025.1_JGI_2017-08-21_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_016869025.1_JGI_2017-08-21"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_016869045.1_JGI_2017-08-21_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_016869045.1_JGI_2017-08-21"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_017303935.1_ASM1730393v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_017303935.1_ASM1730393v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_017308175.1_ASM1730817v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_017308175.1_ASM1730817v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_017347465.1_ASM1734746v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_017347465.1_ASM1734746v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_017993055.1_ASM1799305v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_017993055.1_ASM1799305v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_018268235.1_ASM1826823v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_018268235.1_ASM1826823v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_018268255.1_ASM1826825v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_018268255.1_ASM1826825v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_018268265.1_ASM1826826v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_018268265.1_ASM1826826v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_018268295.1_ASM1826829v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_018268295.1_ASM1826829v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_018268315.1_ASM1826831v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_018268315.1_ASM1826831v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_018268355.1_ASM1826835v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_018268355.1_ASM1826835v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_018268395.1_ASM1826839v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_018268395.1_ASM1826839v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_019186925.1_ASM1918692v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_019186925.1_ASM1918692v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_019187105.1_ASM1918710v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_019187105.1_ASM1918710v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_019239955.1_ASM1923995v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_019239955.1_ASM1923995v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_019454105.1_ASM1945410v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_019454105.1_ASM1945410v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_019454125.1_ASM1945412v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_019454125.1_ASM1945412v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_019454145.1_ASM1945414v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_019454145.1_ASM1945414v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_019638675.1_ASM1963867v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_019638675.1_ASM1963867v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_019638755.1_ASM1963875v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_019638755.1_ASM1963875v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_019638775.1_ASM1963877v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_019638775.1_ASM1963877v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_019638795.1_ASM1963879v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_019638795.1_ASM1963879v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_019638835.1_ASM1963883v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_019638835.1_ASM1963883v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_019694835.1_ASM1969483v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_019694835.1_ASM1969483v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_001442875.1_ASM144287v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_001442875.1_ASM144287v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_001442965.1_ASM144296v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_001442965.1_ASM144296v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_001442985.1_ASM144298v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_001442985.1_ASM144298v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002305165.1_ASM230516v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002305165.1_ASM230516v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002335425.1_ASM233542v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002335425.1_ASM233542v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002336105.1_ASM233610v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002336105.1_ASM233610v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002343285.1_ASM234328v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002343285.1_ASM234328v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002343445.1_ASM234344v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002343445.1_ASM234344v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002344135.1_ASM234413v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002344135.1_ASM234413v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002344635.1_ASM234463v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002344635.1_ASM234463v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002344985.1_ASM234498v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002344985.1_ASM234498v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002345045.1_ASM234504v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002345045.1_ASM234504v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002345135.1_ASM234513v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002345135.1_ASM234513v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002345945.1_ASM234594v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002345945.1_ASM234594v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002352215.1_ASM235221v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002352215.1_ASM235221v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002407825.1_ASM240782v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002407825.1_ASM240782v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002411015.1_ASM241101v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002411015.1_ASM241101v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002425055.1_ASM242505v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002425055.1_ASM242505v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002425195.1_ASM242519v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002425195.1_ASM242519v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002455365.1_ASM245536v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002455365.1_ASM245536v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_002455425.1_ASM245542v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_002455425.1_ASM245542v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_007132485.1_ASM713248v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_007132485.1_ASM713248v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_015486155.1_ASM1548615v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_015486155.1_ASM1548615v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_016860805.1_ASM1686080v1_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_016860805.1_ASM1686080v1"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903821495.1_freshwater_MAG_---_Umea1_bin-3024_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903821495.1_freshwater_MAG_---_Umea1_bin-3024"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903822145.1_freshwater_MAG_---_LaPlata_bin-4562_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903822145.1_freshwater_MAG_---_LaPlata_bin-4562"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903829375.1_freshwater_MAG_---_LaPlata-7m-a_bin-649_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903829375.1_freshwater_MAG_---_LaPlata-7m-a_bin-649"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903833215.1_freshwater_MAG_---_Ki2-D3_bin-0414_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903833215.1_freshwater_MAG_---_Ki2-D3_bin-0414"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903837435.1_freshwater_MAG_---_Loclat_bin-19690_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903837435.1_freshwater_MAG_---_Loclat_bin-19690"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903840065.1_freshwater_MAG_---_AM-2014_bin-3848_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903840065.1_freshwater_MAG_---_AM-2014_bin-3848"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903847225.1_freshwater_MAG_---_Kiruna_bin-06268_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903847225.1_freshwater_MAG_---_Kiruna_bin-06268"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903859705.1_freshwater_MAG_---_AM-2014-D2_bin-780_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903859705.1_freshwater_MAG_---_AM-2014-D2_bin-780"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903860125.1_freshwater_MAG_---_Umea2p1_bin-0696_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903860125.1_freshwater_MAG_---_Umea2p1_bin-0696"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903861225.1_freshwater_MAG_---_Umea_bin-08539_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903861225.1_freshwater_MAG_---_Umea_bin-08539"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903861825.1_freshwater_MAG_---_AM-2014-D3_bin-326_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903861825.1_freshwater_MAG_---_AM-2014-D3_bin-326"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903867455.1_freshwater_MAG_---_AM-2014-D1_bin-679_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903867455.1_freshwater_MAG_---_AM-2014-D1_bin-679"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903882155.1_freshwater_MAG_---_AM-2014-D1_bin-694_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903882155.1_freshwater_MAG_---_AM-2014-D1_bin-694"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903882635.1_freshwater_MAG_---_Kiruna_bin-05395_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903882635.1_freshwater_MAG_---_Kiruna_bin-05395"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903885605.1_freshwater_MAG_---_LaPlata-b_bin-0775_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903885605.1_freshwater_MAG_---_LaPlata-b_bin-0775"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903885905.1_freshwater_MAG_---_KT_bin-1274_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903885905.1_freshwater_MAG_---_KT_bin-1274"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903888895.1_freshwater_MAG_---_AM-2014-D2_bin-436_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903888895.1_freshwater_MAG_---_AM-2014-D2_bin-436"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903890005.1_freshwater_MAG_---_LaPlata-a_bin-2205_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903890005.1_freshwater_MAG_---_LaPlata-a_bin-2205"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903893175.1_freshwater_MAG_---_AM3_bin-0987_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903893175.1_freshwater_MAG_---_AM3_bin-0987"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903894435.1_freshwater_MAG_---_Umea1p3_bin-478_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903894435.1_freshwater_MAG_---_Umea1p3_bin-478"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903896165.1_freshwater_MAG_---_AM-2014-D3_bin-237_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903896165.1_freshwater_MAG_---_AM-2014-D3_bin-237"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903899015.1_freshwater_MAG_---_Umea_bin-06016_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903899015.1_freshwater_MAG_---_Umea_bin-06016"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903900035.1_freshwater_MAG_---_Umea2_bin-3220_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903900035.1_freshwater_MAG_---_Umea2_bin-3220"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903903035.1_freshwater_MAG_---_Umea_bin-03907_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903903035.1_freshwater_MAG_---_Umea_bin-03907"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903904815.1_freshwater_MAG_---_AlinenLipids_bin-9590_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903904815.1_freshwater_MAG_---_AlinenLipids_bin-9590"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903909455.1_freshwater_MAG_---_AM_bin-3585_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903909455.1_freshwater_MAG_---_AM_bin-3585"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903910385.1_freshwater_MAG_---_Kiruna2_bin-4349_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903910385.1_freshwater_MAG_---_Kiruna2_bin-4349"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903910415.1_freshwater_MAG_---_Kiruna2_bin-4218_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903910415.1_freshwater_MAG_---_Kiruna2_bin-4218"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903914335.1_freshwater_MAG_---_Umea3p1_bin-1139_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903914335.1_freshwater_MAG_---_Umea3p1_bin-1139"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903919615.1_freshwater_MAG_---_AM-2014_bin-3721_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903919615.1_freshwater_MAG_---_AM-2014_bin-3721"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903924445.1_freshwater_MAG_---_Ja1_bin-4076_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903924445.1_freshwater_MAG_---_Ja1_bin-4076"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903925065.1_freshwater_MAG_---_KR_bin-0707_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903925065.1_freshwater_MAG_---_KR_bin-0707"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903925675.1_freshwater_MAG_---_Ja1-D2_bin-0036_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903925675.1_freshwater_MAG_---_Ja1-D2_bin-0036"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903926105.1_freshwater_MAG_---_Ki3-D2_bin-2384_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903926105.1_freshwater_MAG_---_Ki3-D2_bin-2384"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903926675.1_freshwater_MAG_---_AlinenLipids_bin-9069_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903926675.1_freshwater_MAG_---_AlinenLipids_bin-9069"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903927025.1_freshwater_MAG_---_AM-2014_bin-2629_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903927025.1_freshwater_MAG_---_AM-2014_bin-2629"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903927345.1_freshwater_MAG_---_Loclat_bin-02583_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903927345.1_freshwater_MAG_---_Loclat_bin-02583"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903941125.1_freshwater_MAG_---_Loc080925-8m_bin-678_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903941125.1_freshwater_MAG_---_Loc080925-8m_bin-678"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903941315.1_freshwater_MAG_---_Loc090907-6m_bin-683_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903941315.1_freshwater_MAG_---_Loc090907-6m_bin-683"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903944675.1_freshwater_MAG_---_Loc080925-8-8m_bin-667_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903944675.1_freshwater_MAG_---_Loc080925-8-8m_bin-667"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903951425.1_freshwater_MAG_---_Loc090907-8-6m_bin-692_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903951425.1_freshwater_MAG_---_Loc090907-8-6m_bin-692"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903952775.1_freshwater_MAG_---_Loc090907-5m_bin-125_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903952775.1_freshwater_MAG_---_Loc090907-5m_bin-125"
+final <- cbind(final, ee)
+
+T49 <- readSet(file = "GCA_903957565.1_freshwater_MAG_---_Loc090907-8m_bin-293_genomic.fna.fna")
+T49 <- codonTable(T49)
+cc <- codonCounts(T49)
+cc <- as.data.frame(cc)
+ee <- mapply(sum, cc)
+ee <- as.data.frame(ee)
+colnames(ee) <- "GCA_903957565.1_freshwater_MAG_---_Loc090907-8m_bin-293"
+final <- cbind(final, ee)
+
+```
+
+Ok, so you now have your table with all of the genomes and codon triplets. I think I want to change the axis so that codons are on the horizontal
+```{r}
+sneaky <- t(final)
+
+sneaky <- as.data.frame(sneaky)
+sneaky <- mutate_all(sneaky, function(x) as.numeric(as.character(x)))
+sneaky <- data.frame(genomes = row.names(sneaky), sneaky)
+rownames(sneaky) <- 1:nrow(sneaky)
+
+
+geodata <- read_xlsx("C:/Users/kelse/Documents/Masters R/Updated Geographic locations metadata.xlsx")
+geo <- geodata[c("Complete_genome_name", "Broad_Temp", "GC_content")]
+sneaky <- left_join(sneaky, geo, by = c("genomes" = "Complete_genome_name"))
+geo$Broad_Temp <- factor(geo$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+#Exclude hyperthermo for colouring
+geo <- na.omit(geo)
+
+
+#Remove NA row
+sneaky <- sneaky[-c(112),]
+```
+
+Just do some tidying of my environment
+```{r}
+rm(ee)
+rm(final)
+rm(geo)
+rm(geodata)
+rm(T49)
+rm(cc)
+```
+
+Ok... I've got the df in a shape that I am happy working with.
+Now what I want to do... is maybe split the sneaky df into the individual amino acids
+```{r}
+Ala <- sneaky[c("genomes", "Broad_Temp", "GCT", "GCC", "GCA", "GCG")]
+Arg <- sneaky[c("genomes", "Broad_Temp", "AGA", "AGG", "CGT", "CGC", "CGA", "CGG")]
+Asn <- sneaky[c("genomes", "Broad_Temp", "AAT", "AAC")]
+Asp <- sneaky[c("genomes", "Broad_Temp", "GAT", "GAC")]
+Cys <- sneaky[c("genomes", "Broad_Temp", "TGT", "TCG")]
+Glu <- sneaky[c("genomes", "Broad_Temp", "GAA", "GAG")]
+Gln <- sneaky[c("genomes", "Broad_Temp", "CAA", "CAG")]
+Gly <- sneaky[c("genomes", "Broad_Temp", "GGT", "GGC", "GGA", "GGG")]
+His <- sneaky[c("genomes", "Broad_Temp", "CAT", "CAC")]
+Ile <- sneaky[c("genomes", "Broad_Temp", "ATT", "ATC", "ATA")]
+Leu <- sneaky[c("genomes", "Broad_Temp", "CTT", "CTC", "CTA", "CTG", "TTA", "TTG")]
+Lys <- sneaky[c("genomes", "Broad_Temp", "AAA", "AAG")]
+Met <- sneaky[c("genomes", "Broad_Temp", "ATG")]
+Phe <- sneaky[c("genomes", "Broad_Temp", "TTT", "TTC")]
+Pro <- sneaky[c("genomes", "Broad_Temp", "CCT", "CCC", "CCA", "CCG")]
+Ser <- sneaky[c("genomes", "Broad_Temp", "TCT", "TCC", "TCA", "TCG")]
+Thr <- sneaky[c("genomes", "Broad_Temp", "ACT", "ACC", "ACA", "ACG")]
+Trp <- sneaky[c("genomes", "Broad_Temp", "TGG")]
+Tyr <- sneaky[c("genomes", "Broad_Temp", "TAT", "TAC")]
+Val <- sneaky[c("genomes", "Broad_Temp", "GTT", "GTC", "GTA", "GTG")]
+Stop <- sneaky[c("genomes", "Broad_Temp", "TAA", "TAG", "TAT")]
+```
+
+Here I have a compilation of all amino acids and genomes
+```{r}
+Ala$Broad_Temp <- as.factor(as.character(Ala$Broad_Temp))
+Ala$AlaT <- rowSums(Ala[sapply(Ala, is.numeric)], na.rm = TRUE)
+
+Arg$Broad_Temp <- as.factor(as.character(Arg$Broad_Temp))
+Arg$ArgT <- rowSums(Arg[sapply(Arg, is.numeric)], na.rm = TRUE)
+
+Asn$Broad_Temp <- as.factor(as.character(Asn$Broad_Temp))
+Asn$AsnT <- rowSums(Asn[sapply(Asn, is.numeric)], na.rm = TRUE)
+
+Asp$Broad_Temp <- as.factor(as.character(Asp$Broad_Temp))
+Asp$AspT <- rowSums(Asp[sapply(Asp, is.numeric)], na.rm = TRUE)
+
+Cys$Broad_Temp <- as.factor(as.character(Cys$Broad_Temp))
+Cys$CysT <- rowSums(Cys[sapply(Cys, is.numeric)], na.rm = TRUE)
+
+Gln$Broad_Temp <- as.factor(as.character(Gln$Broad_Temp))
+Gln$GlnT <- rowSums(Gln[sapply(Gln, is.numeric)], na.rm = TRUE)
+
+Glu$Broad_Temp <- as.factor(as.character(Glu$Broad_Temp))
+Glu$GluT <- rowSums(Glu[sapply(Glu, is.numeric)], na.rm = TRUE)
+
+Gly$Broad_Temp <- as.factor(as.character(Gly$Broad_Temp))
+Gly$GlyT <- rowSums(Gly[sapply(Gly, is.numeric)], na.rm = TRUE)
+
+His$Broad_Temp <- as.factor(as.character(His$Broad_Temp))
+His$HisT <- rowSums(His[sapply(His, is.numeric)], na.rm = TRUE)
+
+Ile$Broad_Temp <- as.factor(as.character(Ile$Broad_Temp))
+Ile$IleT <- rowSums(Ile[sapply(Ile, is.numeric)], na.rm = TRUE)
+
+Leu$Broad_Temp <- as.factor(as.character(Leu$Broad_Temp))
+Leu$LeuT <- rowSums(Leu[sapply(Leu, is.numeric)], na.rm = TRUE)
+
+Lys$Broad_Temp <- as.factor(as.character(Lys$Broad_Temp))
+Lys$LysT <- rowSums(Lys[sapply(Lys, is.numeric)], na.rm = TRUE)
+
+Met$Broad_Temp <- as.factor(as.character(Met$Broad_Temp))
+Met$MetT <- rowSums(Met[sapply(Met, is.numeric)], na.rm = TRUE)
+
+Phe$Broad_Temp <- as.factor(as.character(Phe$Broad_Temp))
+Phe$PheT <- rowSums(Phe[sapply(Phe, is.numeric)], na.rm = TRUE)
+
+Pro$Broad_Temp <- as.factor(as.character(Pro$Broad_Temp))
+Pro$ProT <- rowSums(Pro[sapply(Pro, is.numeric)], na.rm = TRUE)
+
+Ser$Broad_Temp <- as.factor(as.character(Ser$Broad_Temp))
+Ser$SerT <- rowSums(Ser[sapply(Ser, is.numeric)], na.rm = TRUE)
+
+Thr$Broad_Temp <- as.factor(as.character(Thr$Broad_Temp))
+Thr$ThrT <- rowSums(Thr[sapply(Thr, is.numeric)], na.rm = TRUE)
+
+colnames(Trp)[3] <- "TrpT"
+
+Tyr$Broad_Temp <- as.factor(as.character(Tyr$Broad_Temp))
+Tyr$TyrT <- rowSums(Tyr[sapply(Tyr, is.numeric)], na.rm = TRUE)
+
+Val$Broad_Temp <- as.factor(as.character(Val$Broad_Temp))
+Val$ValT <- rowSums(Val[sapply(Val, is.numeric)], na.rm = TRUE)
+
+Stop$Broad_Temp <- as.factor(as.character(Stop$Broad_Temp))
+Stop$StopT <- rowSums(Stop[sapply(Stop, is.numeric)], na.rm = TRUE)
+```
+
+```{r}
+Completeamino <- Gly
+Completeamino <- Completeamino[c(1,2,7)]
+Completeamino <- cbind(Completeamino, His[c(5)])
+Completeamino <- cbind(Completeamino, Glu[c(5)])
+Completeamino <- cbind(Completeamino, Lys[c(5)])
+Completeamino <- cbind(Completeamino, Ala[c(7)])
+Completeamino <- cbind(Completeamino, Arg[c(9)])
+Completeamino <- cbind(Completeamino, Asn[c(5)])
+Completeamino <- cbind(Completeamino, Asp[c(5)])
+Completeamino <- cbind(Completeamino, Cys[c(5)])
+Completeamino <- cbind(Completeamino, Gln[c(5)])
+Completeamino <- cbind(Completeamino, Ile[c(6)])
+Completeamino <- cbind(Completeamino, Leu[c(9)])
+Completeamino <- cbind(Completeamino, Met[c(4)])
+Completeamino <- cbind(Completeamino, Phe[c(5)])
+Completeamino <- cbind(Completeamino, Pro[c(7)])
+Completeamino <- cbind(Completeamino, Ser[c(7)])
+Completeamino <- cbind(Completeamino, Stop[c(6)])
+Completeamino <- cbind(Completeamino, Thr[c(7)])
+Completeamino <- cbind(Completeamino, Trp[c(3)])
+Completeamino <- cbind(Completeamino, Tyr[c(5)])
+Completeamino <- cbind(Completeamino, Val[c(7)])
+
+Completeamino$Total <- rowSums(Completeamino[c(3:23)])
+Completeaminoabsolute <- Completeamino
+Completeamino$GlyT <- (Completeamino$GlyT/Completeamino$Total)*100
+Completeamino$HisT <- (Completeamino$HisT/Completeamino$Total)*100
+Completeamino$AlaT <- (Completeamino$AlaT/Completeamino$Total)*100
+Completeamino$ArgT <- (Completeamino$ArgT/Completeamino$Total)*100
+Completeamino$AsnT <- (Completeamino$AsnT/Completeamino$Total)*100
+Completeamino$AspT <- (Completeamino$AspT/Completeamino$Total)*100
+Completeamino$CysT <- (Completeamino$CysT/Completeamino$Total)*100
+Completeamino$GlnT <- (Completeamino$GlnT/Completeamino$Total)*100
+Completeamino$GluT <- (Completeamino$GluT/Completeamino$Total)*100
+Completeamino$IleT <- (Completeamino$IleT/Completeamino$Total)*100
+Completeamino$LeuT <- (Completeamino$LeuT/Completeamino$Total)*100
+Completeamino$LysT <- (Completeamino$LysT/Completeamino$Total)*100
+Completeamino$MetT <- (Completeamino$MetT/Completeamino$Total)*100
+Completeamino$PheT <- (Completeamino$PheT/Completeamino$Total)*100
+Completeamino$ProT <- (Completeamino$ProT/Completeamino$Total)*100
+Completeamino$SerT <- (Completeamino$SerT/Completeamino$Total)*100
+Completeamino$ThrT <- (Completeamino$ThrT/Completeamino$Total)*100
+Completeamino$TrpT <- (Completeamino$TrpT/Completeamino$Total)*100
+Completeamino$TyrT <- (Completeamino$TyrT/Completeamino$Total)*100
+Completeamino$ValT <- (Completeamino$ValT/Completeamino$Total)*100
+Completeamino$StopT <- (Completeamino$StopT/Completeamino$Total)*100
+
+GC <- sneaky[c(1,67)]
+Completeamino <- left_join(Completeamino, GC)
+rm(GC)
+Completeamino$GC_content <- (Completeamino$GC_content)*100
+Completeamino$Broad_Temp <- factor(Completeamino$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+
+```
+
+```{r}
+Arg$Broad_Temp <- as.factor(as.character(Arg$Broad_Temp))
+level_order <- c('Psychro','Meso', 'Thermo')
+
+Arg$rAGA <- (Arg$AGA/Arg$ArgT)*100
+Arg$rAGG <- (Arg$AGG/Arg$ArgT)*100
+Arg$rCGA <- (Arg$CGA/Arg$ArgT)*100
+Arg$rCGC <- (Arg$CGC/Arg$ArgT)*100
+Arg$rCGG <- (Arg$CGG/Arg$ArgT)*100
+Arg$rCGT <- (Arg$CGT/Arg$ArgT)*100
+
+
+Arg$CGN <- rowSums(Arg[c(5:8)])
+Arg$AGR <- rowSums(Arg[c(3,4)])
+Arg$AGR <- (Arg$AGR/Arg$ArgT)*100
+Arg$CGN <- (Arg$CGN/Arg$ArgT)*100
+
+dun.sig <- Arg %>% dunn_test(AGR ~ Broad_Temp, p.adjust.method = "holm", detailed = F)
+dun.sig <- dun.sig[-c(3),]
+dun.sig$y.position <- c(57, 58)
+dun.sig$p.adj <- signif(dun.sig$p.adj, digits = 3)
+
+ggplot(Arg, aes(x=factor(Broad_Temp, levels = level_order), y=AGR)) + 
+  geom_boxplot() + 
+  xlab("Temperature niche") + 
+  ylab("Percentage of AGR in proteome") +
+  stat_compare_means(label.y = 60) + 
+  geom_jitter() + 
+  theme(legend.position = "none") +stat_pvalue_manual(dun.sig, label = "p.adj")
+ggsave("Arma codon AGR.png", width = 20, height = 15, units = "cm")
+```
+
+Codon bias equation (via ratio)
+(Glu+Lys)/(Gly+His)
+```{r}
+CUB <- Completeamino[c("genomes", "Broad_Temp", "GC_content", "GlnT", "GluT", "HisT", "LysT")]
+CUB$Equation <- ((CUB$GluT + CUB$LysT)/(CUB$GlnT + CUB$HisT))
+
+d <- CUB  %>% dunn_test(Equation~Broad_Temp, p.adjust.method = "holm", detailed = F)
+dd <- d %>% filter(p.adj.signif == "*" | p.adj.signif == "**" | p.adj.signif == "***" | p.adj.signif == "****")
+dd$y.position <- c(2,2.1)
+dd$p.adj <- signif(dd$p.adj, digits = 3)
+
+CUB %>%  ggplot(aes(x=factor(Broad_Temp, levels = level_order), y =Equation)) +
+  geom_boxplot() + 
+  geom_hline(yintercept = 4.5, linetype="dashed", color="#E41A1C", size=1)+ 
+  geom_hline(yintercept = 3.2, linetype="dashed", color="#FF7F00", size=1)+ 
+  geom_hline(yintercept = 4.6, linetype="dashed", color="#FF7F00", size=1)+ 
+  geom_hline(yintercept = 2.5, linetype="dashed", color="#4DAF4A", size=1) + 
+  stat_compare_means(label.y = 3.6) +
+  stat_pvalue_manual(dd, label = "p.adj") +
+  geom_jitter() + 
+  theme(legend.position = "none") + 
+  xlab("Temperature niche") +
+  ylab("CUB ratio")+
+  annotate(geom = "text", x=1, y=2.4, label="Mesophile (<2.5)", col="#4DAF4A")+
+  annotate(geom = "text", x=1, y=3, label="Thermophile (3.2-4.6)", col="#FF7F00") +
+  annotate(geom = "text", x=1, y=4.4, label="Hyperthermophile (>4.5)", col="#E41A1C")
+
+ggsave("CUB.png", width = 25, height = 15, units = "cm")
+```
+
+Have a look at GC content and Arginine percentage in genome, apparently with an increase in GC content, there should be an increase in Arg
+
+```{r}
+tempcol <- c( "#377EB8", "#4DAF4A","#E41A1C")
+
+Completeamino %>% ggplot(aes(x=ArgT, y=GC_content, color=Broad_Temp)) + geom_point() + xlab("Percentage of Arginine in genome") + ylab("GC percentage in genome") + scale_color_manual(values = tempcol)
+
+ggplot(Completeamino, 
+       aes(y = GC_content, 
+           x = ArgT)) + 
+  geom_point(aes(color=as.factor(Broad_Temp)), size=2) + 
+  geom_smooth(method = 'lm', formula = y~x) +
+  scale_color_manual(values = tempcol) +
+  facet_grid(vars(Broad_Temp)) +
+  labs(col="Temperature") +
+  stat_cor(method="spearman")
+ggsave("Arma arg and gc codon.png", width = 25, height = 15, units = "cm")
+```
+
+```{r}
+chemicalpolar <- Completeaminoabsolute[c(1,2)]
+chemicalpolar$NonP <- rowSums(Completeaminoabsolute[c(16,13,23,7,14,21,15,11,17,3)])
+chemicalpolar$Pol <- rowSums(Completeaminoabsolute[c(22,20,18,4,6,8,5,10,12,9)])
+chemicalpolar$total <- rowSums(chemicalpolar[c(3:4)])
+chemicalpolar$NonP <- (chemicalpolar$NonP/chemicalpolar$total)*100
+chemicalpolar$Pol <- (chemicalpolar$Pol/chemicalpolar$total)*100
+
+chemicalwater <- Completeaminoabsolute[c(1,2)]
+chemicalwater$HPhobic <- rowSums(Completeaminoabsolute[c(16,13,23,7,14,21,15,11)])
+chemicalwater$HPhilic <- rowSums(Completeaminoabsolute[c(6,8,5,10,12,9)])
+chemicalwater$Neutral <- rowSums(Completeaminoabsolute[c(17,3,22,20,18,4)])
+chemicalwater$total <- rowSums(chemicalwater[c(3:5)])
+chemicalwater$HPhobic <- (chemicalwater$HPhobic/chemicalwater$total)*100
+chemicalwater$HPhilic <- (chemicalwater$HPhilic/chemicalwater$total)*100
+chemicalwater$Neutral <- (chemicalwater$Neutral/chemicalwater$total)*100
+
+chemicalcharge <- Completeaminoabsolute[c(1,2)]
+chemicalcharge$pcharge <- rowSums(Completeaminoabsolute[c(4,6,8)])
+chemicalcharge$ncharge <- rowSums(Completeaminoabsolute[c(5,10)])
+#chemicalcharge$charge <- rowSums(Completeaminoabsolute[c(4,6,8,5,10)])
+chemicalcharge$nocharge <- rowSums(Completeaminoabsolute[c(16,13,23,7,14,21,15,11,17,3, 22,20,18,12,9)])
+chemicalcharge$total <- rowSums(chemicalcharge[c(3:5)])
+chemicalcharge$pcharge <- (chemicalcharge$pcharge/chemicalcharge$total)*100
+chemicalcharge$ncharge <- (chemicalcharge$ncharge/chemicalcharge$total)*100
+#chemicalcharge$charge <- (chemicalcharge$charge/chemicalcharge$total)*100
+chemicalcharge$nocharge <- (chemicalcharge$nocharge/chemicalcharge$total)*100
+
+chemicalsize <- Completeaminoabsolute[c(1,2)]
+chemicalsize$VLarge <- rowSums(Completeaminoabsolute[c(16,21,22)])
+chemicalsize$LLarge <- rowSums(Completeaminoabsolute[c(13,14,15,6,8)])
+chemicalsize$MMedium <- rowSums(Completeaminoabsolute[c(23,4,5,12)])
+chemicalsize$SSmall <- rowSums(Completeaminoabsolute[c(11,17,20,10,9)])
+chemicalsize$VSmall <- rowSums(Completeaminoabsolute[c(7,3,18)])
+chemicalsize$total <- rowSums(chemicalsize[c(3:7)])
+chemicalsize$VLarge <- (chemicalsize$VLarge/chemicalsize$total)*100
+chemicalsize$LLarge <- (chemicalsize$LLarge/chemicalsize$total)*100
+chemicalsize$MMedium <- (chemicalsize$MMedium/chemicalsize$total)*100
+chemicalsize$SSmall <- (chemicalsize$SSmall/chemicalsize$total)*100
+chemicalsize$VSmall <- (chemicalsize$VSmall/chemicalsize$total)*100
+```
+
+#```{r}
+temp <- melt(chemicalsplit, id.vars='Broad_Temp', measure.vars=c('NonP', 'Pol'))
+ggplot(temp) + geom_boxplot(aes(x=Broad_Temp, y=value, color=variable)) + xlab("Environmental niche") + ylab("Percentage of amino acid in proteome")
+
+temp <- melt(chemicalsplit, id.vars='Broad_Temp', measure.vars=c('HPhobic', 'HPhilic', 'Neutral'))
+ggplot(temp) + geom_boxplot(aes(x=Broad_Temp, y=value, color=variable)) + xlab("Environmental niche") + ylab("Percentage of amino acid in proteome")
+
+temp <- melt(chemicalsplit, id.vars='Broad_Temp', measure.vars=c('pcharge', 'ncharge', 'charge', 'nocharge'))
+ggplot(temp) + geom_boxplot(aes(x=Broad_Temp, y=value, color=variable)) + xlab("Environmental niche") + ylab("Percentage of amino acid in proteome")
+
+temp <- melt(chemicalsplit, id.vars='Broad_Temp', measure.vars=c('Large', 'Medium', 'Small'))
+ggplot(temp) + geom_boxplot(aes(x=Broad_Temp, y=value, color=variable)) + xlab("Environmental niche") + ylab("Percentage of amino acid in proteome")
+
+temp <- melt(chemicalsplit, id.vars='Broad_Temp', measure.vars=c('VLarge', 'LLarge', 'MMedium', 'SSmall', 'VSmall'))
+ggplot(temp) + geom_boxplot(aes(x=Broad_Temp, y=value, color=variable)) + xlab("Environmental niche") + ylab("Percentage of amino acid in proteome")
+
+#```
+
+
+#```{r}
+totalcodon <- melt(Completeamino, id.vars='Broad_Temp', measure.vars=c('AlaT', 'ArgT', 'AsnT', 'AspT', 'CysT', 'GlnT', 'GluT', 'HisT', 'IleT', 'LeuT', 'LysT', 'MetT', 'PheT', 'ProT', 'SerT', 'StopT', 'ThrT', 'TrpT', 'TyrT', 'ValT'))
+ggplot(totalcodon) + geom_boxplot(aes(x=variable, y=value)) + xlab("Amino acid") + ylab("Percentage of codon in genome") + facet_wrap(~Broad_Temp)
+
+ggplot(totalcodon) + geom_boxplot(aes(x=Broad_Temp, y=value)) + xlab("Environmental niche") + ylab("Percentage of codon in genome") + facet_wrap(~variable)
+
+
+test <- totalcodon %>% group_by(variable) %>% summarize(p.value=kruskal.test(value~Broad_Temp)$p.value)
+
+ggplot(totalcodon) + geom_boxplot(aes(x=Broad_Temp, y=value)) + xlab("Environmental niche") + ylab("Percentage of codon in genome") + facet_wrap(~variable)+
+    geom_text(data=test, aes(x=2, y=14, label=paste0("p=",p.value))) + ylim(0,15)
+
+d <- totalcodon %>% group_by(variable) %>% dunn_test(value~Broad_Temp, p.adjust.method = "holm", detailed = F)
+
+dd <- d %>% filter(p.adj.signif == "*" | p.adj.signif == "**" | p.adj.signif == "***" | p.adj.signif == "****")
+dd$y.position <- c(14,14,16,14,16,14,16,18,14,16,14,16,18,14,16,14,16,14,14,14,14,16,14,16,14,16,18,14,16,14,16,18)
+
+a <- ggplot(totalcodon) + geom_boxplot(aes(x=Broad_Temp, y=value)) + xlab("Environmental niche") + ylab("Percentage of amino acid in proteome") + facet_wrap(~variable)+
+    geom_text(data=test, aes(x=2, y=20, label=paste0("p=",p.value))) + ylim(0,22)
+a + stat_pvalue_manual(dd, label = "p.adj.signif")
+ggsave("totalcodon.png", width = 30, height = 20, units = "cm")
+#```
+
+```{r}
+library(corrplot)
+library(ggpubr)
+library(factoextra)
+library(FactoMineR)
+library(vegan)
+library(RAM)
+library(ape)
+library(ade4)
+library(phyloseq)
+completearrange <- Completeamino
+temprange <- completearrange[c(2)]
+temprange <- as.character(temprange$Broad_Temp)
+compl <- completearrange[,3:23]
+sneak <- sneaky[,2:65]
+
+disamino <- vegdist(compl, method="bray")
+discodon <- vegdist(sneak, method = "bray")
+
+mds.stuff <- cmdscale(disamino, eig=TRUE, x.ret = TRUE)
+mds.var.per <- round(mds.stuff$eig/sum(mds.stuff$eig)*100,1)
+mds.values <- mds.stuff$points
+mds.data <- as.data.frame(mds.values)
+end <- completearrange[c(1:2)]
+
+end <- cbind(end, mds.data)
+end$Broad_Temp <- factor(end$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+enddy <- as.data.frame(completearrange[c(25)])
+enddy[enddy >30.00 & enddy <= 39.99] <- ">30"
+enddy[enddy >39.999 & enddy <= 49.99] <- ">40"
+enddy[enddy >50.00 & enddy <= 59.99] <- ">50"
+enddy[enddy >60.00 & enddy <= 69.99] <- ">60"
+enddy[enddy >70.00 & enddy <= 79.99] <- ">70"
+gcrange <- as.list(enddy)
+gcrange <- as.character(gcrange$GC_content)
+
+end <- cbind(end, enddy)
+
+adonis(compl ~ temprange, method="bray")
+adonis(compl ~ gcrange, method="bray")
+
+zz <- ggplot(end, aes(x=V1, y=V2, col=Broad_Temp)) + geom_point() + xlab(paste("PCoA -", mds.var.per[1], "%", sep = "")) +  ylab(paste("PCoA -", mds.var.per[2], "%", sep = "")) + stat_ellipse() + scale_color_manual(values = tempcol) + annotate(geom = "text", x=0.1, y=0.07, label="Anosim = 0.003")
+ggsave("aminotemp.png", width = 30, height = 20, units = "cm")
+
+yy <- ggplot(end, aes(x=V1, y=V2, col=GC_content)) + geom_point() + xlab(paste("PCoA -", mds.var.per[1], "%", sep = "")) +  ylab(paste("PCoA -", mds.var.per[2], "%", sep = "")) + stat_ellipse()+ scale_color_brewer(palette = "Set1") + annotate(geom = "text", x=0.1, y=0.07, label="Anosim = 0.001")
+ggsave("aminogc.png", width = 30, height = 20, units = "cm")
+
+mds.stuff2 <- cmdscale(discodon, eig=TRUE, x.ret = TRUE)
+mds.var.per2 <- round(mds.stuff2$eig/sum(mds.stuff2$eig)*100,1)
+mds.values2 <- mds.stuff2$points
+mds.data2 <- as.data.frame(mds.values2)
+end2 <- completearrange[c(1:2)]
+
+end2 <- cbind(end2, mds.data2)
+end2$Broad_Temp <- factor(end2$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+enddy2 <- as.data.frame(completearrange[c(25)])
+enddy2[enddy2 >30.00 & enddy2 <= 39.99] <- ">30"
+enddy2[enddy2 >39.999 & enddy2 <= 49.99] <- ">40"
+enddy2[enddy2 >50.00 & enddy2 <= 59.99] <- ">50"
+enddy2[enddy2 >60.00 & enddy2 <= 69.99] <- ">60"
+enddy2[enddy2 >70.00 & enddy2 <= 79.99] <- ">70"
+
+end2 <- cbind(end2, enddy2)
+
+xx <- ggplot(end2, aes(x=V1, y=V2, col=Broad_Temp)) + geom_point() + xlab(paste("PCoA -", mds.var.per2[1], "%", sep = "")) +  ylab(paste("PCoA -", mds.var.per2[2], "%", sep = "")) + stat_ellipse()  + scale_color_manual(values = tempcol)
+ggsave("codontemp.png", width = 30, height = 20, units = "cm")
+
+ww <- ggplot(end2, aes(x=V1, y=V2, col=GC_content)) + geom_point() + xlab(paste("PCoA -", mds.var.per2[1], "%", sep = "")) +  ylab(paste("PCoA -", mds.var.per2[2], "%", sep = "")) + stat_ellipse()+ scale_color_brewer(palette = "Set1")
+ggsave("codongc.png", width = 30, height = 20, units = "cm")
+
+ggarrange(zz,yy,ncol=1, nrow=2, labels = c("A", "B"))
+ggsave("pcoaaminocombined.png", width = 15, height = 15, units = "cm")
+
+#ggarrange(xx,ww,ncol=1, nrow=2)
+#ggsave("pcoacodoncombined.png", width = 25, height = 40, units = "cm")
+
+#ggarrange(zz,yy,xx,ww, ncol=2, nrow=2)
+#ggsave("allpcoa.png", width = 25, height = 20, units = "cm")
+
+adonis(compl ~ temprange, method="bray")
+adonis(compl ~ gcrange, method="bray")
+
+```
+
+
+
+pole <- chemicalpolar[,3:4]
+charge <- chemicalcharge[,3:5]
+size <- chemicalsize[,3:7]
+water <- chemicalwater[,3:5]
+
+dispole <- vegdist(pole, method="bray")
+discharge <- vegdist(charge, method = "bray")
+dissize <- vegdist(size, method="bray")
+diswater <- vegdist(water, method="bray")
+
+mds.stuff <- cmdscale(dispole, eig=TRUE, x.ret = TRUE)
+mds.var.per <- round(mds.stuff$eig/sum(mds.stuff$eig)*100,1)
+mds.values <- mds.stuff$points
+mds.data <- as.data.frame(mds.values)
+end3 <- Completeamino[c(1:2)]
+end3 <- cbind(end3, mds.data)
+
+ggplot(end3, aes(x=V1, y=V2, col=Broad_Temp)) + geom_point() + xlab(paste("PCoA -", mds.var.per[1], "%", sep = "")) +  ylab(paste("PCoA -", mds.var.per[2], "%", sep = "")) + stat_ellipse() + scale_color_brewer(palette = "Set1")
+
+mds.stuff <- cmdscale(discharge, eig=TRUE, x.ret = TRUE)
+mds.var.per <- round(mds.stuff$eig/sum(mds.stuff$eig)*100,1)
+mds.values <- mds.stuff$points
+mds.data <- as.data.frame(mds.values)
+end4 <- Completeamino[c(1:2)]
+end4 <- cbind(end4, mds.data)
+
+ggplot(end4, aes(x=V1, y=V2, col=Broad_Temp)) + geom_point() + xlab(paste("PCoA -", mds.var.per[1], "%", sep = "")) +  ylab(paste("PCoA -", mds.var.per[2], "%", sep = "")) + stat_ellipse() + scale_color_brewer(palette = "Set1")
+
+mds.stuff <- cmdscale(dissize, eig=TRUE, x.ret = TRUE)
+mds.var.per <- round(mds.stuff$eig/sum(mds.stuff$eig)*100,1)
+mds.values <- mds.stuff$points
+mds.data <- as.data.frame(mds.values)
+end5 <- Completeamino[c(1:2)]
+end5 <- cbind(end5, mds.data)
+
+ggplot(end5, aes(x=V1, y=V2, col=Broad_Temp)) + geom_point() + xlab(paste("PCoA -", mds.var.per[1], "%", sep = "")) +  ylab(paste("PCoA -", mds.var.per[2], "%", sep = "")) + stat_ellipse() + scale_color_brewer(palette = "Set1")
+
+mds.stuff <- cmdscale(diswater, eig=TRUE, x.ret = TRUE)
+mds.var.per <- round(mds.stuff$eig/sum(mds.stuff$eig)*100,1)
+mds.values <- mds.stuff$points
+mds.data <- as.data.frame(mds.values)
+end6 <- Completeamino[c(1:2)]
+end6 <- cbind(end6, mds.data)
+
+ggplot(end6, aes(x=V1, y=V2, col=Broad_Temp)) + geom_point() + xlab(paste("PCoA -", mds.var.per[1], "%", sep = "")) +  ylab(paste("PCoA -", mds.var.per[2], "%", sep = "")) + stat_ellipse() + scale_color_brewer(palette = "Set1")
+
+ggarrange(zz,yy,ncol=1, nrow=2, labels = c("A", "B"))
+ggsave("pcoaaminocombined.png", width = 15, height = 15, units = "cm")

@@ -1,0 +1,505 @@
+---
+title: "hmmer"
+author: "K. J. McKenzie"
+date: "16/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Alright, lets give this hmmer analysis a blast.
+So what do i want to do...?
+I want to get the hmmer outputs that I already have. match their gene identifiers to their genome name. And then i want to look at it two ways:
+- Is the gene present/absent?
+- For present, copy number?
+
+So I have a file with a list of genome names and genes. My hmmer output as xlsx files
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(RColorBrewer)
+library(writexl)
+
+setwd("C:/Users/kelse/Documents/Masters R/hmmer")
+mycolors <- c("#377EB8", "#4DAF4A","#E41A1C")
+```
+
+```{r}
+names <- read_xlsx("genomes and genes.xlsx")
+names <- names[-c(3)]
+names <- names[c(2,1)]
+dnaj <- read_xlsx("dnaJ1.xlsx")
+dnaj <- dnaj[-c(2:4,19:21)]
+dnaj <- dnaj[-c(1,2),]
+colnames(dnaj) <- c("Gene", "full_evalue", "full_score", "full_bias", "best_evalue", "best_score", "best_bias", "domain_exp", "domain_reg", "domain_clu", "domain_ov", "domain_env", "domain_dom", "domain_rep", "domain_inc")
+dnaj1 <- dnaj
+dnaj1 <- left_join(names, dnaj)
+dnaj1 <- na.omit(dnaj1)
+```
+Ok, I now have a file of the dnaj hmmer output and have attached the genome names to the weird gene identifiers so that I can then match temperature information with them when I finish the initial processing.
+I think that I want to filter the evalue of 0.05 
+So I now have dnajcounts which has a list of genome names with an occurence count and also a presence column with P for present. 
+```{r}
+dnaj1$full_evalue <- as.numeric(as.character(dnaj1$full_evalue))
+dnaj1 <- subset(dnaj1, full_evalue<=0.05)
+dnajcounts <- dnaj1[c(2)]
+dnajcounts$`Genome name` <- as.factor(as.character(dnajcounts$`Genome name`))
+
+dnajcounts <- dnajcounts %>% 
+  group_by(`Genome name`) %>%
+  summarise(no_rows = length(`Genome name`))
+dnajcounts$presence <- "P"
+```
+
+Now I want to add my metagenomic df
+```{r}
+oldmetadata <- read_xlsx("C:/Users/kelse/Documents/Masters R/Updated Geographic locations metadata.xlsx")
+
+names(oldmetadata)[names(oldmetadata) == 'Genbank_assembly_accession'] <- 'Genome name'
+oldmetadata <- oldmetadata[-c(38),]
+#Ok so it looks like I may have some old genomes in here that are of poor quality, so I will trust my old metadata for the correct genome names
+
+oldmetadatasmall <- oldmetadata[c(3,10)]
+trial <- right_join(dnajcounts, oldmetadatasmall)
+trial$no_rows <- as.numeric(as.character(trial$no_rows))
+trial$presence[is.na(trial$presence)] <- "N"
+
+table(trial$presence, trial$Broad_Temp)
+
+trialy <- trial[c(2,4)]
+trialy$Broad_Temp <- as.factor(as.character(trialy$Broad_Temp))
+trialy <- rename(count(trialy, Broad_Temp, no_rows), Freq = n)
+trialy <- na.omit(trialy)
+trial$Broad_Temp <- factor(trial$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+#ggplot(trialy, aes(x=no_rows, y=Freq, col=Broad_Temp)) + geom_point(size=4) + ggtitle("dnaJ") + xlab("Copy number of gene") + ylab("Number of genomes")+
+  scale_color_manual(values=mycolors)
+dnaJplot <- ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + stat_compare_means()
+trialy$Broad_Temp <- as.character(trialy$Broad_Temp)
+trialy$no_rows <- as.character(trialy$no_rows)
+trialy$Freq <- as.numeric(as.character(trialy$Freq))
+trialy$Broad_Temp <- factor(trialy$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+#ggplot(trialy, aes(fill=no_rows, y=Freq, x=Broad_Temp)) + 
+    #geom_bar(position="dodge", stat="identity") + ylab("Number of genomes") +guides(fill=guide_legend(title="Copy number"))
+```
+
+```{r}
+mastergenes <- trial
+mastergenes <- mastergenes[c(1,2,4)]
+names(mastergenes)[2] <- 'dnaJ' 
+mastergenes <- mastergenes[c(1,3,2)]
+```
+
+
+```{r}
+rgyrase <- read_xlsx("rgyrase1.xlsx")
+rgyrase <- rgyrase[-c(2:4,19)]
+rgyrase <- rgyrase[-c(1,2),]
+colnames(rgyrase) <- c("Gene", "full_evalue", "full_score", "full_bias", "best_evalue", "best_score", "best_bias", "domain_exp", "domain_reg", "domain_clu", "domain_ov", "domain_env", "domain_dom", "domain_rep", "domain_inc")
+rgyrase1 <- rgyrase
+rgyrase1 <- left_join(names, rgyrase)
+rgyrase1 <- na.omit(rgyrase1)
+
+rgyrase1$full_evalue <- as.numeric(as.character(rgyrase1$full_evalue))
+rgyrase1 <- subset(rgyrase1, full_evalue<=0.05)
+rgyrasecounts <- rgyrase1[c(2)]
+rgyrasecounts$`Genome name` <- as.factor(as.character(rgyrasecounts$`Genome name`))
+
+rgyrasecounts <- rgyrasecounts %>% 
+  group_by(`Genome name`) %>%
+  summarise(no_rows = length(`Genome name`))
+rgyrasecounts$presence <- "P"
+
+trial <- right_join(rgyrasecounts, oldmetadatasmall)
+trial$no_rows <- as.numeric(as.character(trial$no_rows))
+trial$presence[is.na(trial$presence)] <- "N"
+
+table(trial$presence, trial$Broad_Temp)
+
+trialy <- trial[c(2,4)]
+trialy$Broad_Temp <- as.factor(as.character(trialy$Broad_Temp))
+trialy <- rename(count(trialy, Broad_Temp, no_rows), Freq = n)
+trialy <- na.omit(trialy)
+ggplot(trialy, aes(x=no_rows, y=Freq, col=Broad_Temp)) + geom_point(size=4) + ggtitle("rgyrase") + xlab("Copy number of gene") + ylab("Number of genomes") +
+  scale_color_manual(values=mycolors)
+trial$Broad_Temp <- factor(trial$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number")
+trialy$Broad_Temp <- as.character(trialy$Broad_Temp)
+trialy$no_rows <- as.character(trialy$no_rows)
+trialy$Freq <- as.numeric(as.character(trialy$Freq))
+trialy$Broad_Temp <- factor(trialy$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+ggplot(trialy, aes(fill=no_rows, y=Freq, x=Broad_Temp)) + 
+    geom_bar(position="dodge", stat="identity") + ylab("Number of genomes") +guides(fill=guide_legend(title="Copy number"))
+
+trial <- trial[-c(3,4)]
+mastergenes <- left_join(mastergenes, trial)
+names(mastergenes)[4] <- 'rgyrase'
+```
+
+UDG
+``` {r}
+udg <- read_xlsx("UDG1.xlsx")
+udg <- udg[-c(2:4,19)]
+udg <- udg[-c(1,2),]
+colnames(udg) <- c("Gene", "full_evalue", "full_score", "full_bias", "best_evalue", "best_score", "best_bias", "domain_exp", "domain_reg", "domain_clu", "domain_ov", "domain_env", "domain_dom", "domain_rep", "domain_inc")
+udg1 <- udg
+udg1 <- left_join(names, udg)
+udg1 <- na.omit(udg1)
+
+udg1$full_evalue <- as.numeric(as.character(udg1$full_evalue))
+udg1 <- subset(udg1, full_evalue<=0.05)
+udgcounts <- udg1[c(2)]
+udgcounts$`Genome name` <- as.factor(as.character(udgcounts$`Genome name`))
+
+udgcounts <- udgcounts %>% 
+  group_by(`Genome name`) %>%
+  summarise(no_rows = length(`Genome name`))
+udgcounts$presence <- "P"
+
+trial <- right_join(udgcounts, oldmetadatasmall)
+trial$no_rows <- as.numeric(as.character(trial$no_rows))
+trial$presence[is.na(trial$presence)] <- "N"
+
+table(trial$presence, trial$Broad_Temp)
+
+trialy <- trial[c(2,4)]
+trialy$Broad_Temp <- as.factor(as.character(trialy$Broad_Temp))
+trialy <- rename(count(trialy, Broad_Temp, no_rows), Freq = n)
+trialy <- na.omit(trialy)
+ggplot(trialy, aes(x=no_rows, y=Freq, col=Broad_Temp)) + geom_point(size=4) + ggtitle("UDG") + xlab("Copy number of gene") + ylab("Number of genomes") +
+  scale_color_manual(values=mycolors)
+trial$Broad_Temp <- factor(trial$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+udgplot <- ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + stat_compare_means()
+#ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + geom_jitter()
+trialy$Broad_Temp <- as.character(trialy$Broad_Temp)
+trialy$no_rows <- as.character(trialy$no_rows)
+trialy$Freq <- as.numeric(as.character(trialy$Freq))
+trialy$Broad_Temp <- factor(trialy$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+#ggplot(trialy, aes(fill=no_rows, y=Freq, x=Broad_Temp)) + 
+ #   geom_bar(position="dodge", stat="identity") + ylab("Number of genomes") +guides(fill=guide_legend(title="Copy number"))
+
+trial <- trial[-c(3,4)]
+mastergenes <- left_join(mastergenes, trial)
+names(mastergenes)[5] <- 'UDG'
+```
+
+dnaK
+```{r}
+dnak <- read_xlsx("dnaK1.xlsx")
+dnak <- dnak[-c(2:4,19:21)]
+dnak <- dnak[-c(1,2),]
+colnames(dnak) <- c("Gene", "full_evalue", "full_score", "full_bias", "best_evalue", "best_score", "best_bias", "domain_exp", "domain_reg", "domain_clu", "domain_ov", "domain_env", "domain_dom", "domain_rep", "domain_inc")
+dnak1 <- dnak
+dnak1 <- left_join(names, dnak)
+dnak1 <- na.omit(dnak1)
+
+dnak1$full_evalue <- as.numeric(as.character(dnak1$full_evalue))
+dnak1 <- subset(dnak1, full_evalue<=0.05)
+dnakcounts <- dnak1[c(2)]
+dnakcounts$`Genome name` <- as.factor(as.character(dnakcounts$`Genome name`))
+
+dnakcounts <- dnakcounts %>% 
+  group_by(`Genome name`) %>%
+  summarise(no_rows = length(`Genome name`))
+dnakcounts$presence <- "P"
+
+trial <- right_join(dnakcounts, oldmetadatasmall)
+trial$no_rows <- as.numeric(as.character(trial$no_rows))
+trial$presence[is.na(trial$presence)] <- "N"
+
+table(trial$presence, trial$Broad_Temp)
+
+trialy <- trial[c(2,4)]
+trialy$Broad_Temp <- as.factor(as.character(trialy$Broad_Temp))
+trialy <- rename(count(trialy, Broad_Temp, no_rows), Freq = n)
+trialy <- na.omit(trialy)
+#ggplot(trialy, aes(x=no_rows, y=Freq, col=Broad_Temp)) + geom_point(size=4) + ggtitle("dnaK") + xlab("Copy number of gene") + ylab("Number of genomes") +
+ # scale_color_manual(values=mycolors)
+dnaKplot <- ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + stat_compare_means()
+d <-  trial %>% dunn_test(no_rows~Broad_Temp, p.adjust.method = "holm", detailed = F)
+dd <- d %>% filter(p.adj.signif == "*" | p.adj.signif == "**" | p.adj.signif == "***" | p.adj.signif == "****")
+dd$y.position <- c(8, 8.5)
+dnaKplot <- ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + stat_compare_means() +stat_pvalue_manual(dd, label = "p.adj.signif")
+#ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + geom_jitter()
+trialy$Broad_Temp <- as.character(trialy$Broad_Temp)
+trialy$no_rows <- as.character(trialy$no_rows)
+trialy$Freq <- as.numeric(as.character(trialy$Freq))
+trialy$Broad_Temp <- factor(trialy$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+#ggplot(trialy, aes(fill=no_rows, y=Freq, x=Broad_Temp)) + 
+ #   geom_bar(position="dodge", stat="identity") + ylab("Number of genomes") +guides(fill=guide_legend(title="Copy number"))
+
+trial <- trial[-c(3,4)]
+mastergenes <- left_join(mastergenes, trial)
+names(mastergenes)[6] <- 'dnaK'
+```
+
+groEL
+``` {r}
+groEL <- read_xlsx("groEL1.xlsx")
+groEL <- groEL[-c(2:4,19:22)]
+groEL <- groEL[-c(1,2),]
+colnames(groEL) <- c("Gene", "full_evalue", "full_score", "full_bias", "best_evalue", "best_score", "best_bias", "domain_exp", "domain_reg", "domain_clu", "domain_ov", "domain_env", "domain_dom", "domain_rep", "domain_inc")
+groEL1 <- groEL
+groEL1 <- left_join(names, groEL)
+groEL1 <- na.omit(groEL1)
+
+groEL1$full_evalue <- as.numeric(as.character(groEL1$full_evalue))
+groEL1 <- subset(groEL1, full_evalue<=0.05)
+groELcounts <- groEL1[c(2)]
+groELcounts$`Genome name` <- as.factor(as.character(groELcounts$`Genome name`))
+
+groELcounts <- groELcounts %>% 
+  group_by(`Genome name`) %>%
+  summarise(no_rows = length(`Genome name`))
+groELcounts$presence <- "P"
+
+trial <- right_join(groELcounts, oldmetadatasmall)
+trial$no_rows <- as.numeric(as.character(trial$no_rows))
+trial$presence[is.na(trial$presence)] <- "N"
+
+table(trial$presence, trial$Broad_Temp)
+
+trialy <- trial[c(2,4)]
+trialy$Broad_Temp <- as.factor(as.character(trialy$Broad_Temp))
+trialy <- rename(count(trialy, Broad_Temp, no_rows), Freq = n)
+trialy <- na.omit(trialy)
+#ggplot(trialy, aes(x=no_rows, y=Freq, col=Broad_Temp)) + geom_point(size=4) + ggtitle("groEL") + xlab("Copy number of gene") + ylab("Number of genomes") +
+ # scale_color_manual(values=mycolors)
+#ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number")
+#ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + geom_jitter()
+trialy$Broad_Temp <- as.character(trialy$Broad_Temp)
+trialy$no_rows <- as.character(trialy$no_rows)
+trialy$Freq <- as.numeric(as.character(trialy$Freq))
+trialy$Broad_Temp <- factor(trialy$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+groELplot <- ggplot(trialy, aes(fill=no_rows, y=Freq, x=Broad_Temp)) + 
+    geom_bar(position="dodge", stat="identity") + ylab("Number of genomes") +guides(fill=guide_legend(title="Copy number"))
+
+trial <- trial[-c(3,4)]
+mastergenes <- left_join(mastergenes, trial)
+names(mastergenes)[7] <- 'groEL'
+
+groES <- read_xlsx("groES1.xlsx")
+groES <- groES[-c(2:4,19:21)]
+groES <- groES[-c(1,2),]
+colnames(groES) <- c("Gene", "full_evalue", "full_score", "full_bias", "best_evalue", "best_score", "best_bias", "domain_exp", "domain_reg", "domain_clu", "domain_ov", "domain_env", "domain_dom", "domain_rep", "domain_inc")
+groES1 <- groES
+groES1 <- left_join(names, groES)
+groES1 <- na.omit(groES1)
+
+groES1$full_evalue <- as.numeric(as.character(groES1$full_evalue))
+groES1 <- subset(groES1, full_evalue<=0.05)
+groEScounts <- groES1[c(2)]
+groEScounts$`Genome name` <- as.factor(as.character(groEScounts$`Genome name`))
+
+groEScounts <- groELcounts %>% 
+  group_by(`Genome name`) %>%
+  summarise(no_rows = length(`Genome name`))
+groEScounts$presence <- "P"
+
+trial <- right_join(groEScounts, oldmetadatasmall)
+trial$no_rows <- as.numeric(as.character(trial$no_rows))
+trial$presence[is.na(trial$presence)] <- "N"
+
+table(trial$presence, trial$Broad_Temp)
+
+trialy <- trial[c(2,4)]
+trialy$Broad_Temp <- as.factor(as.character(trialy$Broad_Temp))
+trialy <- rename(count(trialy, Broad_Temp, no_rows), Freq = n)
+trialy <- na.omit(trialy)
+#ggplot(trialy, aes(x=no_rows, y=Freq, col=Broad_Temp)) + geom_point(size=4) + ggtitle("groES") + xlab("Copy number of gene") + ylab("Number of genomes") +
+ # scale_color_manual(values=mycolors)
+#ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number")
+#ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + geom_jitter()
+trialy$Broad_Temp <- as.character(trialy$Broad_Temp)
+trialy$no_rows <- as.character(trialy$no_rows)
+trialy$Freq <- as.numeric(as.character(trialy$Freq))
+trialy$Broad_Temp <- factor(trialy$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+groESplot <- ggplot(trialy, aes(fill=no_rows, y=Freq, x=Broad_Temp)) + 
+    geom_bar(position="dodge", stat="identity") + ylab("Number of genomes") +guides(fill=guide_legend(title="Copy number"))
+
+trial <- trial[-c(3,4)]
+mastergenes <- left_join(mastergenes, trial)
+names(mastergenes)[8] <- 'groES'
+```
+
+grp
+``` {r}
+grp <- read_xlsx("grpE1.xlsx")
+grp <- grp[-c(2:4,19:20)]
+grp <- grp[-c(1,2),]
+colnames(grp) <- c("Gene", "full_evalue", "full_score", "full_bias", "best_evalue", "best_score", "best_bias", "domain_exp", "domain_reg", "domain_clu", "domain_ov", "domain_env", "domain_dom", "domain_rep", "domain_inc")
+grp1 <- grp
+grp1 <- left_join(names, grp)
+grp1 <- na.omit(grp1)
+
+grp1$full_evalue <- as.numeric(as.character(grp1$full_evalue))
+grp1 <- subset(grp1, full_evalue<=0.05)
+grpcounts <- grp1[c(2)]
+grpcounts$`Genome name` <- as.factor(as.character(grpcounts$`Genome name`))
+
+grpcounts <- grpcounts %>% 
+  group_by(`Genome name`) %>%
+  summarise(no_rows = length(`Genome name`))
+grpcounts$presence <- "P"
+
+trial <- right_join(grpcounts, oldmetadatasmall)
+trial$no_rows <- as.numeric(as.character(trial$no_rows))
+trial$presence[is.na(trial$presence)] <- "N"
+
+table(trial$presence, trial$Broad_Temp)
+
+trialy <- trial[c(2,4)]
+trialy$Broad_Temp <- as.factor(as.character(trialy$Broad_Temp))
+trialy <- rename(count(trialy, Broad_Temp, no_rows), Freq = n)
+trialy <- na.omit(trialy)
+#ggplot(trialy, aes(x=no_rows, y=Freq, col=Broad_Temp)) + geom_point(size=4) + ggtitle("grpE") + xlab("Copy number of gene") + ylab("Number of genomes") +
+ # scale_color_manual(values=mycolors)
+#ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number")
+#ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + geom_jitter()
+trialy$Broad_Temp <- as.character(trialy$Broad_Temp)
+trialy$no_rows <- as.character(trialy$no_rows)
+trialy$Freq <- as.numeric(as.character(trialy$Freq))
+trialy$Broad_Temp <- factor(trialy$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+grpEplot <- ggplot(trialy, aes(fill=no_rows, y=Freq, x=Broad_Temp)) + 
+    geom_bar(position="dodge", stat="identity") + ylab("Number of genomes") +guides(fill=guide_legend(title="Copy number"))
+
+trial <- trial[-c(3,4)]
+mastergenes <- left_join(mastergenes, trial)
+names(mastergenes)[9] <- 'grpE'
+```
+
+
+```{r}
+sig70 <- read_xlsx("sigma70.xlsx")
+sig70 <- sig70[-c(2:4,19:23)]
+sig70 <- sig70[-c(1,2),]
+colnames(sig70) <- c("Gene", "full_evalue", "full_score", "full_bias", "best_evalue", "best_score", "best_bias", "domain_exp", "domain_reg", "domain_clu", "domain_ov", "domain_env", "domain_dom", "domain_rep", "domain_inc")
+sig701 <- sig70
+sig701 <- left_join(names, sig70)
+sig701 <- na.omit(sig701)
+
+sig701$full_evalue <- as.numeric(as.character(sig701$full_evalue))
+sig701 <- subset(sig701, full_evalue<=0.05)
+sig70counts <- sig701[c(2)]
+sig70counts$`Genome name` <- as.factor(as.character(sig70counts$`Genome name`))
+
+sig70counts <- sig70counts %>% 
+  group_by(`Genome name`) %>%
+  summarise(no_rows = length(`Genome name`))
+sig70counts$presence <- "P"
+
+siga <- right_join(sig70counts, oldmetadatasmall)
+siga$no_rows <- as.numeric(as.character(siga$no_rows))
+siga$presence[is.na(siga$presence)] <- "N"
+
+table(siga$presence, siga$Broad_Temp)
+
+sigb <- siga[c(2,4)]
+sigb$Broad_Temp <- as.factor(as.character(sigb$Broad_Temp))
+sigb <- rename(count(sigb, Broad_Temp, no_rows), Freq = n)
+sigb <- na.omit(sigb)
+#ggplot(sigb, aes(x=no_rows, y=Freq, col=Broad_Temp)) + geom_point(size=4) + ggtitle("sigmaR2") + xlab("Copy number of gene") + ylab("Number of genomes") +scale_color_manual(values=mycolors)
+#sigma70plot <- ggplot(siga, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + stat_compare_means()
+#ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + geom_jitter()
+sigb$Broad_Temp <- as.character(sigb$Broad_Temp)
+sigb$no_rows <- as.character(sigb$no_rows)
+sigb$Freq <- as.numeric(as.character(sigb$Freq))
+sigb$Broad_Temp <- factor(sigb$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+sigma70plot <- ggplot(sigb, aes(fill=no_rows, y=Freq, x=Broad_Temp)) + 
+    geom_bar(position="dodge", stat="identity") + ylab("Number of genomes") +guides(fill=guide_legend(title="Copy number"))
+
+siga <- siga[-c(3,4)]
+mastergenes <- left_join(mastergenes, siga)
+names(mastergenes)[10] <- 'sigma70'
+```
+
+```{r}
+sig32 <- read_xlsx("sigm32.xlsx")
+sig32 <- sig32[-c(2:4,19:23)]
+sig32 <- sig32[-c(1,2),]
+colnames(sig32) <- c("Gene", "full_evalue", "full_score", "full_bias", "best_evalue", "best_score", "best_bias", "domain_exp", "domain_reg", "domain_clu", "domain_ov", "domain_env", "domain_dom", "domain_rep", "domain_inc")
+sig321 <- sig32
+sig321 <- left_join(names, sig32)
+sig321 <- na.omit(sig321)
+
+sig321$full_evalue <- as.numeric(as.character(sig321$full_evalue))
+sig321 <- subset(sig321, full_evalue<=0.05)
+sig32counts <- sig321[c(2)]
+sig32counts$`Genome name` <- as.factor(as.character(sig32counts$`Genome name`))
+
+sig32counts <- sig32counts %>% 
+  group_by(`Genome name`) %>%
+  summarise(no_rows = length(`Genome name`))
+sig32counts$presence <- "P"
+
+sigc <- right_join(sig32counts, oldmetadatasmall)
+sigc$no_rows <- as.numeric(as.character(sigc$no_rows))
+sigc$presence[is.na(sigc$presence)] <- "N"
+
+table(sigc$presence, sigc$Broad_Temp)
+
+sigd <- sigc[c(2,4)]
+sigd$Broad_Temp <- as.factor(as.character(sigd$Broad_Temp))
+sigd <- rename(count(sigd, Broad_Temp, no_rows), Freq = n)
+sigd <- na.omit(sigd)
+#ggplot(sigd, aes(x=no_rows, y=Freq, col=Broad_Temp)) + geom_point(size=4) + ggtitle("sigmaR2") + xlab("Copy number of gene") + ylab("Number of genomes") + scale_color_manual(values=mycolors)
+sigma70plot <- ggplot(sigd, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + stat_compare_means()
+#ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + geom_jitter()
+
+sigc <- sigc[-c(3,4)]
+mastergenes <- left_join(mastergenes, sigc)
+names(mastergenes)[11] <- 'sigma32'
+```
+
+```{r}
+sigE <- read_xlsx("sigmaE.xlsx")
+sigE <- sigE[-c(2:4,19:22)]
+sigE <- sigE[-c(1,2),]
+colnames(sigE) <- c("Gene", "full_evalue", "full_score", "full_bias", "best_evalue", "best_score", "best_bias", "domain_exp", "domain_reg", "domain_clu", "domain_ov", "domain_env", "domain_dom", "domain_rep", "domain_inc")
+sigE1 <- sigE
+sigE1 <- left_join(names, sigE)
+sigE1 <- na.omit(sigE1)
+
+sigE1$full_evalue <- as.numeric(as.character(sigE1$full_evalue))
+sigE1 <- subset(sigE1, full_evalue<=0.05)
+sigEcounts <- sigE1[c(2)]
+sigEcounts$`Genome name` <- as.factor(as.character(sigEcounts$`Genome name`))
+
+sigEcounts <- sigEcounts %>% 
+  group_by(`Genome name`) %>%
+  summarise(no_rows = length(`Genome name`))
+sigEcounts$presence <- "P"
+
+sige <- right_join(sigEcounts, oldmetadatasmall)
+sige$no_rows <- as.numeric(as.character(sige$no_rows))
+sige$presence[is.na(sige$presence)] <- "N"
+
+table(sige$presence, sige$Broad_Temp)
+
+sigf <- sige[c(2,4)]
+sigf$Broad_Temp <- as.factor(as.character(sigf$Broad_Temp))
+sigf <- rename(count(sigf, Broad_Temp, no_rows), Freq = n)
+sigf <- na.omit(sigf)
+#ggplot(sigf, aes(x=no_rows, y=Freq, col=Broad_Temp)) + geom_point(size=4) + ggtitle("sigmaR2") + xlab("Copy number of gene") + ylab("Number of genomes") +scale_color_manual(values=mycolors)
+sigma70plot <- ggplot(sige, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + stat_compare_means()
+#ggplot(trial, aes(x=Broad_Temp, y=no_rows)) + geom_boxplot() + ylab("Gene copy number") + geom_jitter()
+
+sige <- sige[-c(3,4)]
+mastergenes <- left_join(mastergenes, sige)
+names(mastergenes)[12] <- 'sigmaE'
+
+mastergenes <- mastergenes[c(1,2,4,5,3,6:12)]
+write_xlsx(mastergenes, "mastergenes.xlsx", col_names = T)
+```
+
+
+
+```{r}
+ggarrange(dnaJplot, dnaKplot, udgplot, nrow=2, ncol=2, labels = c("A", "C", "D"))
+ggsave("hmmerbox.png", width = 20, height = 15, units = "cm")
+
+ggarrange(groESplot, groELplot, grpEplot, nrow=2, ncol=2, labels=c("A", "B", "C"))
+ggsave("hmmerbar.png", width = 20, height = 15, units = "cm")
+```

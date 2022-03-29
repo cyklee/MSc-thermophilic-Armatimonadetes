@@ -1,0 +1,182 @@
+---
+title: "Untitled"
+author: "K. J. McKenzie"
+date: "28/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("C:/Users/kelse/Documents/Masters R")
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+```
+
+```{r}
+df <- read_xlsx("IMG-JGI.xlsx")
+df$`Temperature Range` <- as.factor(as.character(df$`Temperature Range`))
+df$Phylum <- as.factor(as.character(df$Phylum))
+df <- na.omit(df)
+table(df$`Temperature Range`)
+table(df$Phylum)
+df<-df[!(df$`Temperature Range`=="Undefined" | df$`Temperature Range`=="Psychrotrophic"),]
+df<-df[!(df$Phylum=="Armatimonadetes" | df$Phylum=="Caldiserica" | df$Phylum=="Candidatus Saccharibacteria" | df$Phylum=="Dictyoglomi" | df$Phylum=="Ignavibacteriae" | df$Phylum=="Calditrichaeota" | df$Phylum=="Chrysiogenetes" | df$Phylum=="Elusimicrobia" | df$Phylum=="Lentisphaerae" | df$Phylum=="unclassified" | df$Phylum=="Candidatus Poribacteria" | df$Phylum=="Coprothermobacterota" | df$Phylum=="Fibrobacteres" | df$Phylum=="Gemmatimonadetes"),]
+
+df$`Temperature Range` <- as.factor(as.character(df$`Temperature Range`))
+df$Phylum <- as.factor(as.character(df$Phylum))
+table(df$Phylum, df$`Temperature Range`)
+
+table(df$Phylum)
+
+```
+Ok so we have:
+HT: 26
+M: 8838
+P: 80
+Pt: 126
+Ptr: 23
+T: 335
+Tt: 28
+U: 5
+
+Removed all psychroptrophic because that is ambiguous and all undefined
+
+
+Now I want to extract all phyla with less than 60 genomes to keep, all genomes from the big group with any form of thermo/psychro
+```{r}
+semidone <- subset(df, Phylum == "Acidobacteria" | Phylum == "Balneolaeota" | Phylum=="Fusobacteria" | Phylum=="Thermotogae" | Phylum =="Chlamydiae" | Phylum =="Deferribacteres" | Phylum=="Nitrospirae" | Phylum=="Synergistetes" | Phylum =="Verrucomicrobia" | Phylum =="Aquificae" | Phylum=="Chlorobi" | Phylum=="Deinococcus-Thermus" | Phylum=="Planctomycetes" | Phylum=="Chloroflexi" | Phylum =="Thermodesulfobacteria")
+
+df <- df[!(df$Phylum == "Acidobacteria" | df$Phylum == "Balneolaeota" | df$Phylum=="Fusobacteria" | df$Phylum=="Thermotogae" | df$Phylum =="Chlamydiae" | df$Phylum =="Deferribacteres" | df$Phylum=="Nitrospirae" | df$Phylum=="Synergistetes" | df$Phylum =="Verrucomicrobia" | df$Phylum =="Aquificae" | df$Phylum=="Chlorobi" | df$Phylum=="Deinococcus-Thermus" | df$Phylum=="Planctomycetes" | df$Phylum=="Chloroflexi" | df$Phylum =="Thermodesulfobacteria"),]
+df$`Temperature Range` <- as.factor(as.character(df$`Temperature Range`))
+df$Phylum <- as.factor(as.character(df$Phylum))
+table(df$Phylum, df$`Temperature Range`)
+
+semidonet <- subset(df, `Temperature Range` =="Hyperthermophile" | `Temperature Range` =="Psychrophile" | `Temperature Range` =="Psychrotolerant" | `Temperature Range` =="Thermophile" | `Temperature Range` =="Thermotolerant")
+df <- df[!(df$`Temperature Range`=="Hyperthermophile" | df$`Temperature Range` =="Psychrophile" | df$`Temperature Range` =="Psychrotolerant" | df$`Temperature Range` =="Thermophile" | df$`Temperature Range` =="Thermotolerant"),]
+df$`Temperature Range` <- as.factor(as.character(df$`Temperature Range`))
+df$Phylum <- as.factor(as.character(df$Phylum))
+table(df$Phylum, df$`Temperature Range`)
+```
+
+NOw to do the nitty gritty subsetting from the over abundant phyla
+First, look at cyano, sprio and tene
+Cyano has Glorobacteria 1 and unclassified 139. Hence, random subset of 75
+Spirochaetes has 1 class, random subset of 75
+Tenericutes has 1 class, random subset of 75
+
+```{r}
+cya <- subset(df, Phylum=="Cyanobacteria")
+table(cya$Class)
+cya <- cya[sample(1:nrow(cya),75, replace=FALSE),]
+
+
+spi <- subset(df, Phylum=="Spirochaetes")
+table(spi$Class)
+spi <- spi[sample(1:nrow(spi),75, replace=FALSE),]
+
+ten <- subset(df, Phylum=="Tenericutes")
+table(ten$Class)
+ten <- ten[sample(1:nrow(ten),75, replace=FALSE),]
+```
+And now the big bois
+Actinobacteria, take all from low 4 classes and 25 from Actinomycetia
+Bacteroidetes, take 25 from all and all low
+Firmicutes, take 25 from all and all low
+Proteobacteria, take 25 from all and all low
+```{r}
+act <- subset(df, Phylum=="Actinobacteria")
+table(act$Class)
+act1 <- subset(act, Class=="Acidimicrobiia" | Class=="Nitriliruptoria" | Class=="Thermoleophilia")
+act2 <- subset(act, Class=="Coriobacteriia")
+act2 <- act2[sample(1:nrow(act2),25, replace=FALSE),]
+act3 <- subset(act, Class=="Actinomycetia")
+act3 <- act3[sample(1:nrow(act3),25, replace=FALSE),]  
+actf <- rbind(act1, act2)
+actf <- rbind(actf, act3)
+  
+Bact <- subset(df, Phylum=="Bacteroidetes")
+table(Bact$Class)
+bact1 <- subset(Bact, Class=="Chitinophagia" | Class=="Saprospiria" | Class=="unclassified")
+bact2 <- subset(Bact, Class=="Bacteroidia")
+bact2 <- bact2[sample(1:nrow(bact2),25, replace=FALSE),]
+bact3 <- subset(Bact, Class=="Cytophagia")
+bact3 <- bact3[sample(1:nrow(bact3),25, replace=FALSE),]
+bact4 <- subset(Bact, Class=="Flavobacteriia")
+bact4 <- bact4[sample(1:nrow(bact4),25, replace=FALSE),]
+bact5 <- subset(Bact, Class=="Sphingobacteriia")
+bact5 <- bact5[sample(1:nrow(bact5),25, replace=FALSE),]
+bactf <- rbind(bact1, bact2)
+bactf <- rbind(bactf, bact3)
+bactf <- rbind(bactf, bact4)
+bactf <- rbind(bactf, bact5)
+
+
+Firm <- subset(df, Phylum=="Firmicutes")
+table(Firm$Class)
+firm1 <- subset(Firm, Class=="unclassified")
+firm2 <- subset(Firm, Class=="Bacilli")
+firm2 <- firm2[sample(1:nrow(firm2),25, replace=FALSE),]
+firm3 <- subset(Firm, Class=="Clostridia")
+firm3 <- firm3[sample(1:nrow(firm3),25, replace=FALSE),]
+firm4 <- subset(Firm, Class=="Erysipelotrichia")
+firm4 <- firm4[sample(1:nrow(firm4),25, replace=FALSE),]
+firm5 <- subset(Firm, Class=="Negativicutes")
+firm5 <- firm5[sample(1:nrow(firm5),25, replace=FALSE),]
+firm6 <- subset(Firm, Class=="Tissierellia")
+firm6 <- firm6[sample(1:nrow(firm6),25, replace=FALSE),]
+firmf <- rbind(firm1, firm2)
+firmf <- rbind(firmf, firm3)
+firmf <- rbind(firmf, firm4)
+firmf <- rbind(firmf, firm5)
+firmf <- rbind(firmf, firm6)
+
+Prot <- subset(df, Phylum=="Proteobacteria")
+table(Prot$Class)
+prot1 <- subset(Prot, Class=="Acidithiobacillia" | Class=="Oligoflexia" | Class=="Zetaproteobacteria")
+prot2 <- subset(Prot, Class=="Alphaproteobacteria")
+prot2 <- prot2[sample(1:nrow(prot2),25, replace=FALSE),]
+prot3 <- subset(Prot, Class=="Betaproteobacteria")
+prot3 <- prot3[sample(1:nrow(prot3),25, replace=FALSE),]
+prot4 <- subset(Prot, Class=="Deltaproteobacteria")
+prot4 <- prot4[sample(1:nrow(prot4),25, replace=FALSE),]
+prot5 <- subset(Prot, Class=="Epsilonproteobacteria")
+prot5 <- prot5[sample(1:nrow(prot5),25, replace=FALSE),]
+prot6 <- subset(Prot, Class=="Gammaproteobacteria")
+prot6 <- prot6[sample(1:nrow(prot6),25, replace=FALSE),]
+protf <- rbind(prot1, prot2)
+protf <- rbind(protf, prot3)
+protf <- rbind(protf, prot4)
+protf <- rbind(protf, prot5)
+protf <- rbind(protf, prot6)
+
+collection <- rbind(semidone, semidonet)
+collection <- rbind(collection, cya)
+collection <- rbind(collection, spi)
+collection <- rbind(collection, ten)
+collection <- rbind(collection, actf)
+collection <- rbind(collection, bactf)
+collection <- rbind(collection, firmf)
+collection <- rbind(collection, protf)
+table(collection$`Temperature Range`)
+table(collection$`Temperature Range`, collection$Phylum)
+
+write_xlsx(collection, "JGI_final.xlsx")
+```
+There are only 330 archaea that are going to work properly for this project so I will just keep them all and not do any filtering (446 after filter for no temp detail, 330 after filter for GCA_)
+```{r}
+archaea <- read_xlsx("archaea.xlsx")
+archaea <- archaea %>% drop_na(`Temperature Range`)
+archaea <- archaea %>% drop_na(Phylum)
+archaea <- archaea %>% drop_na(`NCBI Assembly Accession`)
+write_xlsx(archaea, "archaeafiltered.xlsx")
+```
+
+
+Then save whatever column you want at .txt file and then use https://www.ncbi.nlm.nih.gov/sites/batchentrez
+to extract what information you want

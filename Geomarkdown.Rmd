@@ -1,0 +1,227 @@
+---
+title: "Geomarkdown"
+author: "K. J. McKenzie"
+date: "16/09/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("C:\\Users\\kelse\\Documents\\Masters R")
+
+library(tidyverse)
+library(readxl)
+library(rstatix)
+library(ggpubr)
+library(Hmisc)
+```
+
+```{r}
+geodata <- read_xlsx("Updated Geographic locations metadata.xlsx")
+
+geodata$Broad_Environment <- as.factor(as.character(geodata$Broad_Environment))
+geodata$Broad_Temp <- as.factor(as.character(geodata$Broad_Temp))
+geodata$`GC content` <- as.numeric(as.character(geodata$GC_content))
+geodata$Genome_Size <- as.numeric(as.character(geodata$Genome_Size))
+
+geodata <- geodata[!grepl("NA", geodata$Broad_Temp),]
+
+#Relevel factors
+geodata$Broad_Temp <- factor(geodata$Broad_Temp, levels = c("Psychro", "Meso", "Thermo"))
+```
+
+```{r}
+shapiro.test(geodata$GC_content)
+shapiro.test(geodata$Genome_Size)
+
+begc <-  geodata %>%  ggplot(aes(x = Broad_Environment, y =GC_content)) +
+  geom_boxplot() + geom_jitter() + stat_compare_means(method = "kruskal.test")
+ggsave("GC enviro con stat.png")
+
+
+btgc <- geodata %>% ggplot(aes(x = Broad_Temp, y =GC_content)) +
+  geom_boxplot() + 
+  geom_jitter() + 
+  theme(legend.position = "none") +
+  stat_compare_means(method = "kruskal.test")
+ggsave("GC temp con stat.png")
+
+
+begs <- geodata %>%  ggplot(aes(x = Broad_Environment, y =Genome_Size)) +
+  geom_boxplot() + geom_jitter() + stat_compare_means(method = "kruskal.test")
+ggsave("GS enviro con stat.png")
+
+compare_means(Genome_Size ~ Broad_Temp, data = geodata)
+my_comparison <- list(c("Meso", "Psychro"), c("Meso", "Thermo"), c("Psychro", "Thermo"))
+geodata %>% ggplot(aes(x = Broad_Temp, y =Genome_Size )) +
+  geom_boxplot() +
+  geom_jitter() + 
+  theme(legend.position = "none")  + 
+  stat_compare_means(comparisons = my_comparison) + 
+  stat_compare_means(label.y = 9800000)
+ggsave("GS temp con stat.png")
+
+dunn_test(geodata, Genome_Size ~ Broad_Temp, p.adjust.method = "holm", detailed = F)
+
+dun.sig <- geodata %>% dunn_test(Genome_Size ~ Broad_Temp, p.adjust.method = "holm", detailed = F)
+dun.sig$y.position <- c(8100000, 8800000, 8400000)
+dun.sig$p.adj <- signif(dun.sig$p.adj, digits = 3)
+a <- geodata %>% ggplot(aes(x = Broad_Temp, y =Genome_Size )) +
+  geom_boxplot() + geom_jitter() + 
+  theme(legend.position = "none")  + stat_compare_means(method = "kruskal.test", label.y = 9100000)
+btgs <- a + stat_pvalue_manual(dun.sig, label = "p.adj")
+
+ggarrange(begc, btgc, ncol = 2, nrow = 1)
+ggsave("GC with panel BT-BE.png", width = 20, height = 15, units = "cm")
+
+ggarrange(begs, btgs, ncol = 2, nrow = 1)
+ggsave("GS with panel BT-BE.png", width = 20, height = 15, units = "cm")
+```
+
+```{r}
+tempcol <- c("slateblue4", "springgreen4","orangered4")
+envirocol <- c("chartreuse4", "royalblue3")
+geodata$Stability <- as.factor(as.character(geodata$Stability))
+
+ggplot(geodata, 
+       aes(y = GC_content, 
+           x = Genome_Size)) + 
+  geom_point(aes(color=as.factor(Broad_Temp)), size=2) + 
+  geom_smooth(method = 'lm', formula = y~x) +
+  scale_shape_manual(values = c(19, 24)) +
+  scale_color_manual(values = tempcol) +
+  facet_grid(vars(Broad_Temp)) +
+  labs(col="Temperature") +
+  stat_cor(method="spearman")
+ggsave("tempGSGC.png", width = 25, height = 15, units = "cm")
+
+ggplot(geodata, 
+       aes(y = GC_content, 
+           x = Genome_Size)) + 
+  geom_point(aes(color=as.factor(Broad_Environment)), size=2) + 
+  scale_shape_manual(values = c(19, 24)) +
+  geom_smooth(method = 'lm', formula = y~x) +
+  scale_color_manual(values = envirocol) +
+  facet_grid(vars(Broad_Environment)) +
+  labs(col="Environment") +
+  stat_cor(method = "spearman")
+ggsave("enviroGSGC.png", width = 25, height = 15, units = "cm")
+
+
+cor.test(geodata$Genome_Size, geodata$GC_content, method = "spearman")
+```
+
+```{r}
+therm <- geodata[which(geodata$Broad_Temp == "Thermo"),]
+cor.test(therm$Genome_Size, therm$GC_content, method = "spearman")
+
+psych <- geodata[which(geodata$Broad_Temp == "Psychro"),]
+cor.test(psych$Genome_Size, psych$GC_content, method = "spearman")
+
+meso <- geodata[which(geodata$Broad_Temp == "Meso"),]
+cor.test(meso$Genome_Size, meso$GC_content, method = "spearman")
+```
+
+```{r}
+geodata <- read_xlsx("C:\\Users\\kelse\\Documents\\Masters R\\Archaea-bacteria-final.xlsx")
+```
+
+```{r}
+geodata$`Temperature Range` <- as.factor(as.character(geodata$`Temperature Range`))
+geodata$GC <- as.numeric(as.character(geodata$GC))
+geodata$`Genome Size` <- as.numeric(as.character(geodata$`Genome Size`))
+geodata <- geodata[-c(1146),]
+
+
+geodata <- rename(geodata, Broad_Temp=`Temperature Range`)
+geodata <- rename(geodata, GC_content=GC)
+geodata <- rename(geodata, Genome_Size=`Genome Size`)
+
+
+#Relevel factors
+geodata$Broad_Temp <- factor(geodata$Broad_Temp, levels = c("Psychrophile", "Psychrotolerant", "Mesophile", "Thermotolerant", "Thermophile", "Hyperthermophile"))
+
+shapiro.test(geodata$GC_content)
+shapiro.test(geodata$Genome_Size)
+
+geodata %>% ggplot(aes(x = Broad_Temp, y =GC_content, fill=Domain)) +
+  geom_boxplot() + 
+  #geom_jitter() + 
+  #theme(legend.position = "none") +
+  stat_compare_means(method = "kruskal.test")
+#ggsave("GC temp con stat.png")
+
+geodata %>% ggplot(aes(x = Broad_Temp, y =Genome_Size, fill=Domain)) +
+  geom_boxplot() + 
+  #geom_jitter() + 
+  #theme(legend.position = "none") +
+  stat_compare_means(method = "kruskal.test")
+
+ggplot(geodata, 
+       aes(y = GC_content, 
+           x = Genome_Size)) + 
+  geom_point(aes(color=as.factor(Broad_Temp)), size=2) + 
+  geom_smooth(method = 'lm', formula = y~x) +
+  scale_shape_manual(values = c(19, 24)) +
+  #scale_color_manual(values = tempcol) +
+  facet_grid(vars(Broad_Temp)) +
+  labs(col="Temperature") +
+  stat_cor(method="spearman")
+```
+
+```{r}
+bacteria <- subset(geodata, Domain=="Bacteria")
+bacgs <- bacteria %>% ggplot(aes(x = Broad_Temp, y =Genome_Size)) +
+  geom_boxplot() + 
+  #geom_jitter() + 
+  #theme(legend.position = "none") +
+  stat_compare_means(method = "kruskal.test") + 
+  scale_x_discrete(labels=c("Psychrophile" = "P", 
+                            "Psychrotolerant" = "Pt",
+                              "Mesophile" = "M", 
+                            "Thermotolerant" = "Tt",
+                            "Thermophile" = "T", 
+                            "Hyperthermophile" = "HT")) +
+  xlab("Temperature niche") +
+  ylab("Genome size (Mb)")
+levels(bacteria$Broad_Temp) <- c("P", "Pt", "M", "Tt", "T", "HT")
+levels(archaea$Broad_Temp) <- c("P", "Pt", "M", "Tt", "T", "HT")
+archaea %>% dunn_test(GC_content ~ Broad_Temp, p.adjust.method = "holm", detailed = F) %>%  write.table( sep=",")
+
+
+bacgc <- bacteria %>% ggplot(aes(x = Broad_Temp, y =GC_content)) +
+  geom_boxplot() + 
+  #geom_jitter() + 
+  #theme(legend.position = "none") +
+  stat_compare_means(method = "kruskal.test") + scale_x_discrete(labels=c("Psychrophile" = "P", "Psychrotolerant" = "Pt",
+                              "Mesophile" = "M", "Thermotolerant" = "Tt", "Thermophile" = "T", "Hyperthermophile" = "HT")) +
+  xlab("Temperature niche") +
+  ylab("GC content (%)")
+archaea <- subset(geodata, Domain=="Archaea")
+arcgs <- archaea %>% ggplot(aes(x = Broad_Temp, y =Genome_Size)) +
+  geom_boxplot() + 
+  #geom_jitter() + 
+  #theme(legend.position = "none") +
+  stat_compare_means(method = "kruskal.test") + scale_x_discrete(labels=c("Psychrophile" = "P", 
+                              "Mesophile" = "M", "Thermophile" = "T", "Hyperthermophile" = "HT")) +
+  xlab("Temperature niche")+
+  ylab("Genome size (Mb)")
+arcgc <- archaea %>% ggplot(aes(x = Broad_Temp, y =GC_content)) +
+  geom_boxplot() + 
+  #geom_jitter() + 
+  #theme(legend.position = "none") +
+  stat_compare_means(method = "kruskal.test") + scale_x_discrete(labels=c("Psychrophile" = "P", 
+                              "Mesophile" = "M", "Thermophile" = "T", "Hyperthermophile" = "HT")) +
+  xlab("Temperature niche") +
+  ylab("GC content (%)")
+
+ggarrange(bacgc,arcgc)
+ggsave("GC bact-arc.png", width = 20, height = 15, units = "cm")
+ggarrange(bacgs, arcgs)
+ggsave("GS bact-arc.png", width = 20, height = 15, units = "cm")
+
+```
+

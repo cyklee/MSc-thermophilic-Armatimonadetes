@@ -1,0 +1,479 @@
+---
+title: "prokka"
+author: "K. J. McKenzie"
+date: "29/08/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Setup
+```{r}
+setwd("C:\\Users\\kelse\\Documents\\Masters R\\prokka")
+
+library(tidyverse)
+library(MAP)
+library(stringr)
+library(reshape)
+library(writexl)
+
+##This has taken all 200 something of my prokka genomic output files and read them all in with a tab separator to identify columns. It has put them into the giant df called all_files, which is a large list of 296 elements (the 296 prokka files).
+files_to_read <- list.files(path = "C:\\Users\\kelse\\Documents\\Masters R\\prokka", pattern = "\\.tsv$", full.names = T)
+```
+
+```{r}
+all_files <- lapply(files_to_read,function(x) {
+  read.table(file = x, 
+             sep = '\t', 
+             header = TRUE,
+             quote = "",
+             stringsAsFactors = FALSE)
+})
+
+
+##This has converted the gene and product columns from each df in the list to a factor (were previously character)
+cols<-c("gene","product")
+all_files <- lapply(all_files, function(x) {
+   x[cols]<-lapply(x[cols], factor)
+   x
+ })
+
+
+names.list <-  read.csv(file = 'nameslist.csv') 
+names.list$unique.id <- rownames(names.list)
+##This has removed the _genomic_output.tsv suffix on all of the genome names. Now I only have the genome name
+names.list$ï..nameslist.txt <- gsub("_genomic.fna.tsv","", names.list$ï..nameslist.txt)
+names.list$ï..nameslist.txt <- gsub("PROKKA_","", names.list$ï..nameslist.txt)
+```
+
+```{r}
+##Need to add a new column to each df in the list and then attach names.list to this column
+##This has added a uniqe id to each df
+all_files <- Map(cbind, all_files, unique.id = (1:length(all_files)))
+
+##This bound rows of df by unique id
+prokka_final_output <- bind_rows(all_files, .id = "unique.id")
+
+prokka_final_output$product <- as.factor(as.character(prokka_final_output$product))
+prokka_final_output$EC_number <- as.factor(as.character(prokka_final_output$EC_number))
+prokka_final_output$COG <- as.factor(as.character(prokka_final_output$COG))
+
+prokka_final_output <- prokka_final_output[!prokka_final_output$product == "hypothetical protein",]
+prokka_final_output <- prokka_final_output[!prokka_final_output$product == "putative protein",]
+prokka_final_output <- prokka_final_output[!prokka_final_output$ftype == "tRNA",]
+prokka_final_output <- prokka_final_output[!prokka_final_output$ftype == "tmRNA",]
+prokka_final_output <- prokka_final_output[!prokka_final_output$ftype == "rRNA",]
+prokka_final_output <- prokka_final_output[!prokka_final_output$ftype == "CRISPR",]
+```
+
+```{r}
+prokka_final_output$gene[prokka_final_output$EC_number=="5.1.1.20"] <- "ykfB"
+prokka_final_output$gene[prokka_final_output$product=="D-beta-D-heptose 1-phosphate adenylyltransferase"] <- "rfaE"
+prokka_final_output$gene[prokka_final_output$product=="D-mannonate dehydratase"] <- "manD"
+prokka_final_output$gene[prokka_final_output$COG=="COG5016"] <- "OadA1"
+prokka_final_output$gene[prokka_final_output$COG=="COG5450"] <- "VapB11"
+prokka_final_output$gene[prokka_final_output$product=="Fatty acid ABC transporter ATP-binding/permease protein"] <- "Rv1272c"
+prokka_final_output$gene[prokka_final_output$product=="Multidrug efflux system ATP-binding protein"] <- "Rv1218c"
+
+prokka_final_output$gene[prokka_final_output$product=="Xyloglucanase"] <- "xghA"
+prokka_final_output$gene[prokka_final_output$product=="Virulence protein"] <- "GloA"
+prokka_final_output$gene[prokka_final_output$product=="Ureidoglycolate lyase"] <- "allA"
+prokka_final_output$gene[prokka_final_output$product=="Unsaturated glucuronyl hydrolase"] <- "ugl"
+prokka_final_output$gene[prokka_final_output$product=="Universal stress protein/MSMEI_3859"] <- "MSMEG3950"
+prokka_final_output$gene[prokka_final_output$product=="UDP-N,N'-diacetylbacillosamine 2-epimerase (hydrolyzing)"] <- "legG"
+prokka_final_output$gene[prokka_final_output$product=="UDP-glucose 4-epimerase"] <- "galE"
+
+prokka_final_output$gene[prokka_final_output$product=="Type IV secretion system protein VirB11"] <- "virB11"
+prokka_final_output$gene[prokka_final_output$product=="Type IIS restriction enzyme Eco57I"] <- "AcuI"
+prokka_final_output$gene[prokka_final_output$product=="Tryptophan decarboxylase"] <- "tdc"
+prokka_final_output$gene[prokka_final_output$product=="1,4-alpha-glucan branching enzyme"] <- "gbe1"
+prokka_final_output$gene[prokka_final_output$product=="1,4-dihydroxy-2-naphthoyl-CoA hydrolase"] <- "menI"
+prokka_final_output$gene[prokka_final_output$product=="18 kDa heat shock protein"] <- "hsp18"
+
+prokka_final_output$gene[prokka_final_output$product=="Decaprenyl-phosphate phosphoribosyltransferase"] <- "rv3806c"
+prokka_final_output$gene[prokka_final_output$product=="16S ribosomal RNA"] <- "16S rRNA"
+prokka_final_output$gene[prokka_final_output$product=="N(G),N(G)-dimethylarginine dimethylaminohydrolase"] <- "DDAH1"
+prokka_final_output$gene[prokka_final_output$product=="Peroxiredoxin"] <- "prxs"
+prokka_final_output$gene[prokka_final_output$product=="Carbohydrate deacetylase"] <- "YDJC"
+prokka_final_output$gene[prokka_final_output$product=="Arylesterase"] <- "PON1"
+prokka_final_output$gene[prokka_final_output$product=="Aminopeptidase T"] <- "AP-T"
+prokka_final_output$gene[prokka_final_output$product=="Farnesyl diphosphate synthase"] <- "ispA"
+prokka_final_output$gene[prokka_final_output$product=="(2E,6E)-farnesyl diphosphate synthase 78"] <- "ispA"
+
+prokka_final_output$gene[prokka_final_output$product=="Aspartate aminotransferase"] <- "AST"
+prokka_final_output$gene[prokka_final_output$product=="Long-chain-fatty-acid--CoA ligase FadD15"] <- "fadD15"
+prokka_final_output$gene[prokka_final_output$product=="Polyphosphate:AMP/ADP phosphotransferase"] <- "PAP"
+prokka_final_output$gene[prokka_final_output$product=="dITP/XTP pyrophosphatase"] <- "rdgB"
+prokka_final_output$gene[prokka_final_output$product=="Delta(1)-pyrroline-2-carboxylate reductase"] <- "arcB"
+prokka_final_output$gene[prokka_final_output$product=="S-methyl-5'-thioinosine phosphorylase"] <- "mtnP"
+prokka_final_output$gene[prokka_final_output$product=="Leu/Ile/Val-binding protein"] <- "livJ"
+prokka_final_output$gene[prokka_final_output$product=="Thermostable carboxypeptidase 1"] <- "TTHA0270"
+prokka_final_output$gene[prokka_final_output$product=="N-acetylglucosamine-6-O-sulfatase"] <- "GNS"
+
+prokka_final_output$gene[prokka_final_output$product=="putative Fe(2+)-trafficking protein"] <- "yggX"
+prokka_final_output$gene[prokka_final_output$product=="Multifunctional alkaline phosphatase superfamily protein"] <- "pehA"
+prokka_final_output$gene[prokka_final_output$product=="Purine-binding protein"] <- "PUR"
+prokka_final_output$gene[prokka_final_output$product=="S-adenosylmethionine/S-adenosylhomocysteine transporter"] <- "CTL0843"
+prokka_final_output$gene[prokka_final_output$product=="D-threonine aldolase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="N(4)-(Beta-N-acetylglucosaminyl)-L-asparaginase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Deoxyguanosinetriphosphate triphosphohydrolase-like protein"] <- "dgt"
+prokka_final_output$gene[prokka_final_output$product=="putative oxidoreductase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="EtfAB:quinone oxidoreductase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Putative HTH-type transcriptional regulator"] <- "unknown"
+
+prokka_final_output$gene[prokka_final_output$product=="Epimerase family protein"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="S-(hydroxymethyl)mycothiol dehydrogenase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Putative dipeptidase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="putative transcriptional regulatory protein"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Nucleoid-associated protein"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Arylsulfatase"] <- "atsA"
+prokka_final_output$gene[prokka_final_output$product=="putative ABC transporter ATP-binding protein"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Iron-sulfur cluster carrier protein"] <- "apbC"
+prokka_final_output$gene[prokka_final_output$product=="Putative multidrug export ATP-binding/permease protein"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Aminodeoxyfutalosine deaminase"] <- "add2"
+
+prokka_final_output$gene[prokka_final_output$product=="Renalase"] <- "RNLS"
+prokka_final_output$gene[prokka_final_output$product=="putative zinc protease"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Ulvan-active sulfatase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="8-oxoguanine deaminase"] <- "8-OGD"
+prokka_final_output$gene[prokka_final_output$product=="8-amino-7-oxononanoate synthase/2-amino-3-ketobutyrate coenzyme A ligase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="NADH dehydrogenase-like protein"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="35 kDa protein"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Alpha-L-rhamnosidase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Extracellular exo-alpha-L-arabinofuranosidase"] <- "abfB"
+prokka_final_output$gene[prokka_final_output$product=="Gluconeogenesis factor"] <- "unknown"
+
+prokka_final_output$gene[prokka_final_output$product=="Nucleotide-binding protein"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="6-phosphogluconate dehydrogenase, NAD(+)-dependent, decarboxylating"] <- "gntZ"
+prokka_final_output$gene[prokka_final_output$product=="Ferredoxin--NADP reductase"] <- "petH"
+prokka_final_output$gene[prokka_final_output$product=="D-arabitol-phosphate dehydrogenase"] <- "APDH"
+prokka_final_output$gene[prokka_final_output$product=="Immunogenic protein MPT70"] <- "mpt70"
+prokka_final_output$gene[prokka_final_output$product=="Glycogen synthase"] <- "glgA"
+prokka_final_output$gene[prokka_final_output$product=="IS200/IS605 family transposase ISDge10"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Putative 3-methyladenine DNA glycosylase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="N-acetyldiaminopimelate deacetylase"] <- "ykuR"
+prokka_final_output$gene[prokka_final_output$product=="IS607 family transposase ISCARN56"] <- "unknown"
+
+prokka_final_output$gene[prokka_final_output$product=="putative FAD-linked oxidoreductase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="RNA 2',3'-cyclic phosphodiesterase"] <- "thpR"
+prokka_final_output$gene[prokka_final_output$COG=="COG0327"] <- "ybgI"
+prokka_final_output$gene[prokka_final_output$product=="putative oxidoreductase CT_610"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Glutamate formimidoyltransferase"] <- "FTCD"
+prokka_final_output$gene[prokka_final_output$product=="AP-4-A phosphorylase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="D-lyxose ketol-isomerase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="putative transporter"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Ca(2+)/H(+) antiporter"] <- "chaA"
+prokka_final_output$gene[prokka_final_output$product=="Methylmalonyl-CoA carboxyltransferase 12S subunit"] <- "unknown"
+
+prokka_final_output$gene[prokka_final_output$product=="Purine nucleoside phosphoramidase"] <- "hinT"
+prokka_final_output$gene[prokka_final_output$product=="Beta-galactosidase"] <- "lacZ"
+prokka_final_output$gene[prokka_final_output$product=="Cyclic di-GMP phosphodiesterase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Acetyltransferase"] <- "ttr"
+prokka_final_output$gene[prokka_final_output$product=="Aromatic dipeptide epimerase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Hydroxypyruvate reductase"] <- "hpr"
+prokka_final_output$gene[prokka_final_output$product=="Alpha-monoglucosyldiacylglycerol synthase"] <- "mgs"
+prokka_final_output$gene[prokka_final_output$product=="Bifunctional protein"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="dTDP-3,4-didehydro-2,6-dideoxy-alpha-D-glucose 3-reductase"] <- "spnN"
+prokka_final_output$gene[prokka_final_output$product=="putative zinc-binding alcohol dehydrogenase"] <- "unknown"
+
+prokka_final_output$gene[prokka_final_output$product=="4-O-beta-D-mannosyl-D-glucose phosphorylase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Potassium channel"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Magnesium transporter MgtE"] <- "mgtE"
+prokka_final_output$gene[prokka_final_output$product=="Beta-xylosidase"] <- "xylA"
+prokka_final_output$gene[prokka_final_output$product=="Xyloglucan-specific endo-beta-1,4-glucanase BoGH5A"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="L-lactate transporter"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Glycosyl hydrolase family 109 protein 1"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Formate dehydrogenase, mitochondrial"] <- "FDH1"
+prokka_final_output$gene[prokka_final_output$product=="Beta-galactosidase BoGH2A"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="NADH-quinone oxidoreductase subunit 11"] <- "nqo11"
+
+prokka_final_output$gene[prokka_final_output$product=="Putative phosphoribosyl transferase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Alpha-amylase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Alpha-ketoglutaric semialdehyde dehydrogenase 2"] <- "araE"
+prokka_final_output$gene[prokka_final_output$product=="Endoglucanase C307"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="putative metallo-hydrolase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Extracellular exo-alpha-(1->5)-L-arabinofuranosidase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Putative low molecular weight protein-tyrosine-phosphatase"] <- "ptpA"
+prokka_final_output$gene[prokka_final_output$product=="putative protein/MSMEI_2713"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Ferredoxin"] <- "fdxA"
+prokka_final_output$gene[prokka_final_output$product=="O-acetyl-L-homoserine sulfhydrylase"] <- "metY"
+
+prokka_final_output$gene[prokka_final_output$product=="Glucose 1-dehydrogenase"] <- "gdh"
+prokka_final_output$gene[prokka_final_output$product=="Alpha-xylosidase BoGH31A"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Ribonuclease VapC44"] <- "vapC44"
+prokka_final_output$gene[prokka_final_output$product=="IS3 family transposase ISAcma13"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="A-adding tRNA nucleotidyltransferase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="L-amino acid dehydrogenase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Ribonuclease VapC32"] <- "vapC32"
+prokka_final_output$gene[prokka_final_output$product=="3'3'-cGAMP-specific phosphodiesterase 3"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="putative HTH-type transcriptional regulator"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="L-proline trans-4-hydroxylase"] <- "unknown"
+
+prokka_final_output$gene[prokka_final_output$product=="5'-nucleotidase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="2-dehydro-3-deoxy-L-rhamnonate dehydrogenase (NAD(+))"] <- "LRA5"
+prokka_final_output$gene[prokka_final_output$product=="Protein"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Single-stranded DNA-binding protein"] <- "ssb"
+prokka_final_output$gene[prokka_final_output$product=="Putative esterase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Ribonuclease VapC13"] <- "vapC13"
+prokka_final_output$gene[prokka_final_output$product=="Non-reducing end alpha-L-arabinofuranosidase BoGH43A"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="IS1595 family transposase ISNwi1"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="NDMA-dependent alcohol dehydrogenase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="putative CtpA-like serine protease"] <- "unknown"
+
+prokka_final_output$gene[prokka_final_output$product=="D-tagatose 3-epimerase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Aldo/keto reductase"] <- "AKR"
+prokka_final_output$gene[prokka_final_output$product=="26 kDa periplasmic immunogenic protein"] <- "bp26"
+prokka_final_output$gene[prokka_final_output$product=="Ribonuclease"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Phosphatase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Putative glutamine amidotransferase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Putative glyoxylase CFP32"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Beta-peptidyl aminopeptidase BapA"] <- "bapA"
+prokka_final_output$gene[prokka_final_output$product=="Pyridoxal phosphate homeostasis protein"] <- "yggS"
+prokka_final_output$gene[prokka_final_output$product=="Butyryl-CoA:acetate CoA-transferase"] <- "unknown"
+
+prokka_final_output$gene[prokka_final_output$product=="Sulfurtransferase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Ribonuclease VapC38"] <- "vapC38"
+prokka_final_output$gene[prokka_final_output$product=="Proline dehydrogenase"] <- "proDH"
+prokka_final_output$gene[prokka_final_output$product=="D-glycerate 2-kinase"] <- "garK"
+prokka_final_output$gene[prokka_final_output$product=="Undecaprenyl-phosphate mannosyltransferase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Ribonuclease VapC43"] <- "vapC43"
+prokka_final_output$gene[prokka_final_output$product=="Putative phosphatase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="2-oxoisovalerate dehydrogenase subunit beta"] <- "bfmBAB"
+prokka_final_output$gene[prokka_final_output$product=="1,4-beta-mannosyl-N-acetylglucosamine phosphorylase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="putative GTPase"] <- "unknown"
+
+prokka_final_output$gene[prokka_final_output$product=="queuosine precursor transporter"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Putative pterin-4-alpha-carbinolamine dehydratase"] <- "phhB"
+prokka_final_output$gene[prokka_final_output$product=="putative AAA domain-containing protein"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Isatin hydrolase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="IS481 family transposase ISChy3"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Thermophilic serine proteinase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Lactate 2-monooxygenase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Putative pyridoxal phosphate-dependent acyltransferase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="putative peptidase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="DNA base-flipping protein"] <- "atl"
+
+prokka_final_output$gene[prokka_final_output$product=="Protein archease"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="putative sphingosine-1-phosphate lyase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="2-methylcitrate dehydratase"] <- "prpD"
+prokka_final_output$gene[prokka_final_output$product=="Putative glutamate--cysteine ligase 2"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Formate dehydrogenase"] <- "fdh"
+prokka_final_output$gene[prokka_final_output$product=="23S rRNA-specific endonuclease VapC20"] <- "vapC20"
+prokka_final_output$gene[prokka_final_output$product=="CRISPR system single-strand-specific deoxyribonuclease Cas10/Csm1 (subtype III-A)"] <- "cas10"
+prokka_final_output$gene[prokka_final_output$product=="Lactonase drp35"] <- "dpr35"
+prokka_final_output$gene[prokka_final_output$product=="Putative beta-glucuronidase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="N-acetylmuramoyl-L-alanine amidase"] <- "unknown"
+
+prokka_final_output$gene[prokka_final_output$product=="putative type I restriction enzymeP M protein"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Catechol O-methyltransferase"] <- "comT"
+prokka_final_output$gene[prokka_final_output$product=="N-acetylgalactosamine-6-O-sulfatase"] <- "GLANS"
+prokka_final_output$gene[prokka_final_output$product=="3'3'-cGAMP-specific phosphodiesterase 2"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="IS1 family transposase ISNisp5"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="3-mercaptopropionate dioxygenase"] <- "mdo"
+prokka_final_output$gene[prokka_final_output$product=="Putative transport protein"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Soluble epoxide hydrolase"] <- "sEH"
+prokka_final_output$gene[prokka_final_output$product=="Formylglycine-generating enzyme"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Retaining alpha-galactosidase"] <- "unknown"
+
+prokka_final_output$gene[prokka_final_output$product=="CC-adding tRNA nucleotidyltransferase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="IS5 family transposase IS4811"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Crotonyl-CoA hydratase"] <- "crt"
+prokka_final_output$gene[prokka_final_output$product=="putative ketoamine kinase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="4-hydroxyproline 2-epimerase"] <- "proR"
+prokka_final_output$gene[prokka_final_output$product=="Acetyltransferase Pat"] <- "pat"
+prokka_final_output$gene[prokka_final_output$product=="Beta-1,4-mannooligosaccharide phosphorylase"] <- "raMP2"
+prokka_final_output$gene[prokka_final_output$product=="putative ABC transporter-binding protein"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="D-altritol 5-dehydrogenase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="RutC family protein"] <- "unknown"
+
+prokka_final_output$gene[prokka_final_output$product=="Neutral ceramidase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="L-methionine gamma-lyase"] <- "mgl"
+prokka_final_output$gene[prokka_final_output$product=="NADH-quinone oxidoreductase subunit 12"] <- "nqo12"
+prokka_final_output$gene[prokka_final_output$product=="D,L-glycerol 3-phosphate phosphatase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Green-light absorbing proteorhodopsin"] <- "GPR"
+prokka_final_output$gene[prokka_final_output$product=="putative sulfate transporter"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Polyphenol oxidase"] <- "yfiH"
+prokka_final_output$gene[prokka_final_output$product=="Putative nickel-responsive regulator"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Glutaryl-7-aminocephalosporanic-acid acylase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Histone deacetylase-like amidohydrolase"] <- "hdaH"
+
+prokka_final_output$gene[prokka_final_output$product=="Rubredoxin"] <- "rd"
+prokka_final_output$gene[prokka_final_output$product=="Putative glutaredoxin.1"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="putative glycosyltransferase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Polyphosphate:AMP phosphotransferase"] <- "PAP"
+prokka_final_output$gene[prokka_final_output$product=="NAD-dependent malic enzyme"] <- "maeA"
+prokka_final_output$gene[prokka_final_output$product=="Aspartate racemase"] <- "mcyF"
+prokka_final_output$gene[prokka_final_output$product=="Keratan-sulfate endo-1,4-beta-galactosidase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Delta 4,5-hexuronate-2-O-sulfatase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="N-acetylglucosaminyldiphosphoundecaprenol N-acetyl-beta-D-mannosaminyltransferase"] <- "tagA"
+prokka_final_output$gene[prokka_final_output$product=="RutC family protein"] <- "unknown"
+
+prokka_final_output$gene[prokka_final_output$product=="IS3 family transposase ISCysp23"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Dihydroorotate dehydrogenase B (NAD(+)), electron transfer subunit "] <- "pyrK"
+prokka_final_output$gene[prokka_final_output$product=="IS21 family transposase ISPve1"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="PhoH-like protein"] <- "phoH"
+prokka_final_output$gene[prokka_final_output$product=="Putative monooxygenase"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Phenylacetate-coenzyme A ligase"] <- "paaK"
+prokka_final_output$gene[prokka_final_output$product=="D-galactonate dehydratase family member"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="Soluble hydrogenase 42 kDa subunit"] <- "unknown"
+prokka_final_output$gene[prokka_final_output$product=="5-formyltetrahydrofolate cyclo-ligase"] <- "MTHFS"
+prokka_final_output$gene[prokka_final_output$product=="[FeFe] hydrogenase maturase subunit HydE"] <- "unknown"
+```
+
+```{r}
+prokka_final_output$ftype <- as.factor(as.character(prokka_final_output$ftype))
+
+cds.genes <- subset(prokka_final_output, prokka_final_output$ftype == "CDS")
+
+##Now I have a massive ass df with all of my prokka details with each individual genome with a unique id. This unique id corresponds with names.list so that I can add the genomes names which are in names.list.
+
+prokka_final_output <- merge(prokka_final_output, names.list, by = "unique.id")
+prokka_final_output$unique.id <- as.factor(as.character(prokka_final_output$unique.id))
+
+##Create an empty df with 296 rows
+polished.gene.collection <- data.frame(matrix(ncol = 1, nrow = 157))
+polished.gene.collection$matrix.ncol...1..nrow...157. <- rownames(polished.gene.collection) 
+polished.gene.collection <- setNames(polished.gene.collection, c("unique.id"))
+polished.gene.collection$unique.id <- as.factor(as.character(polished.gene.collection$unique.id))
+
+##Here I have extracted the id and product column
+play_data <- prokka_final_output[c(1, 8)]
+play_data$product <- as.character(play_data$product)
+
+##Here I have counted the number of hypothetical proteins for each genome
+a <- play_data %>% group_by(unique.id) %>% count(product == "hypothetical protein") %>% as.data.frame()
+a$`product == "hypothetical protein"` <- as.factor(as.character(a$`product == "hypothetical protein"`))
+a <- a %>% filter(`product == "hypothetical protein"` == "TRUE")
+a$unique.id <- as.factor(as.character(a$unique.id))
+##Here I have inserted the hypothetical protein count for each genome
+polished.gene.collection <- polished.gene.collection %>% left_join(a, by = "unique.id")
+polished.gene.collection <- subset(polished.gene.collection, select = -c(polished.gene.collection$`product == "hypothetical protein"`))
+names(polished.gene.collection)[names(polished.gene.collection) == "n"] <- "hypothetical.protein"
+
+##Here I have counted the number of putative proteins for each genome
+a <- play_data %>% group_by(unique.id) %>% count(product == "putative protein") %>% as.data.frame()
+a$`product == "putative protein"` <- as.factor(as.character(a$`product == "putative protein"`))
+a <- a %>% filter(`product == "putative protein"` == "TRUE")
+a$unique.id <- as.factor(as.character(a$unique.id))
+##Here I have inserted the putative protein count for each genome
+polished.gene.collection <- polished.gene.collection %>% left_join(a, by = "unique.id")
+polished.gene.collection <- subset(polished.gene.collection, select = -c(3))
+names(polished.gene.collection)[names(polished.gene.collection) == "n"] <- "putative.protein"
+
+##Now I am wanting to extract all of the gene product information and insert it into the polished.gene.collection df
+##Here I have extracted the id and product column
+play_data <- prokka_final_output[c(1, 5)]
+play_data$gene <- as.character(play_data$gene)
+play_data <- play_data %>% mutate_all(na_if, "")
+play_data <- na.omit(play_data)
+
+##I now have a df with my genome ID and all of the prokka-assigned genes
+play_data$gene <- as.factor(as.character(play_data$gene))
+
+###Now to try with the entire dataset
+final <- play_data
+#This will remove the _
+final$gene <- gsub("_.*$", "", final$gene)
+
+#This includes a count the genes, including the duplicates. 
+final<- final %>% 
+  group_by(unique.id) %>% 
+  count(gene)
+
+final$gene <- as.factor(as.character(final$gene))
+
+#This turns the data into a readable format to transpose into wide
+final <- pivot_wider(final, names_from = unique.id, values_from = n)
+final<- as.data.frame(t(final))
+
+#Changing col names to the genes in row 1
+colnames(final)<- final[1,]
+#Deleting the first row as this has now been made the column names
+final <- final[-c(1),]
+final$unique.id <- row.names(final)
+
+
+write_xlsx(final, "gene.collections.xlsx")
+```
+
+```{r}
+polished.gene.collection <- polished.gene.collection %>% left_join(final, by = "unique.id")
+polished.gene.collection <- cbind(names.list, polished.gene.collection)
+```
+
+```{r}
+polished.gene.collection <- polished.gene.collection[-c(2)]
+
+colnames(polished.gene.collection)[1] <- "Genome_name" 
+
+write_xlsx(polished.gene.collection, "final.gene.collection.xlsx")
+```
+
+```{r}
+ghghg <- select(polished.gene.collection, "rpoD", "rpoS", "rpoH", "fliA", "rpoE", "rpoN", "sigE", "sigD", "sigK", "sigF", "sigB", "sigH", "sigJ", "ylaC", "sigL", "rpoN1", "sigW", "ecfG", "sigG", "sigA", "sigK", "sigM", "sigR", "sigX", "sigV", "carQ", "cnrH", "sigI")
+
+propername <- data.frame(lapply(ghghg, function(x) as.numeric(as.character(x))))
+str(propername)
+
+tablesigma <- as.data.frame(sapply(propername, function(x) sum(is.na(x))))
+tablesigma$totalgenomes <- 157
+tablesigma$sigmacount <-  tablesigma$totalgenomes-tablesigma$`sapply(propername, function(x) sum(is.na(x)))`
+colnames(tablesigma) [1] <- "NAcount"
+
+
+totalsigcount <- as.data.frame(colSums(propername, na.rm = T))
+
+```
+
+```{r}
+##I quite like the above approach as this negates the effect of multiple counts of genes due to counting the NA first. I will use this approach for looking at the genes in the entire collection of genes in my collection
+
+bigboi <- polished.gene.collection
+bigboi <- data.frame(lapply(bigboi, function(x) as.numeric(as.character(x))))
+bigboitable <- as.data.frame(sapply(bigboi, function(x) sum(is.na(x))))
+bigboitable$totalgenomes <- 157
+bigboitable$genecount <- bigboitable$totalgenomes-bigboitable$`sapply(bigboi, function(x) sum(is.na(x)))`
+colnames(bigboitable) [1] <- "NAcount"
+str(bigboitable)
+
+co <- table(bigboitable$genecount)
+barplot(co, xlab = "Number of Genomes", ylab = "Number of genes")
+##So obvi I have a lot of genomes with a single copy of one gene, hence why the 1 line is so large. So we have like 20 genes that are found in pretty much all of the genomes. 
+
+##What would happen if I remove all of the single gene counts. Initially... 5104 genomes, removing 759 genes
+m.one <- bigboitable %>% filter(genecount >=2)
+co.one <- table(m.one$genecount)
+barplot(co.one, xlab = "Number of Genomes", ylab = "Number of genes")
+
+```
+
+```{r}
+##OK, letes remove genes that do not appear in more than 10 genomes, down to 2919
+m.ten <- bigboitable %>% filter(genecount >=11)
+co.ten <- table(m.ten$genecount)
+barplot(co.ten, xlab = "Number of Genomes", ylab = "Number of genes")
+```
+
+```{r}
+##Now let have a geez at the genes that are in 75% of my list of genomes.That is
+##(118 = 75% pf 157)
+comp75 <- bigboitable %>% filter(genecount >=118)
+co.75 <- table(comp75$genecount)
+barplot(co.75, xlab = "Number of Genomes", ylab = "Number of genes")
+##This gives 520 genes. Now to think of a way that I can get pathway information on this data??
+
+##And 90% of my data
+##370 genes in 90% of my genomes. 
+comp90 <- bigboitable %>% filter(genecount >=141)
+co.90 <- table(comp90$genecount)
+barplot(co.90, xlab = "Number of Genomes", ylab = "Number of genes")
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
